@@ -1,4 +1,4 @@
-// <copyright file="LightStepSpanExtensions.cs" company="OpenTelemetry Authors">
+﻿// <copyright file="LightStepSpanExtensions.cs" company="OpenTelemetry Authors">
 // Copyright 2018, OpenTelemetry Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,41 +23,41 @@ namespace OpenTelemetry.Exporter.LightStep.Implementation
 
     public static class LightStepSpanExtensions
     {
-        public static LightStepSpan ToLightStepSpan(this SpanData data)
+        public static LightStepSpan ToLightStepSpan(this Span otSpan)
         {
-            var duration = data.EndTimestamp - data.StartTimestamp;
+            var duration = otSpan.EndTimestamp - otSpan.StartTimestamp;
             var span = new LightStepSpan();
-            if (data.ParentSpanId != default)
+            if (otSpan.ParentSpanId != default)
             {
-                var sc = new SpanContext { SpanId = data.ParentSpanId.ToLSSpanId() };
+                var sc = new SpanContext { SpanId = otSpan.ParentSpanId.ToLSSpanId() };
                 span.References.Add(new Reference
                 {
                     Relationship = "CHILD_OF", SpanContext = sc,
                 });
             }
 
-            span.OperationName = data.Name;
-            var traceId = data.Context.TraceId.ToLSTraceId();
-            var spanId = data.Context.SpanId.ToLSSpanId();
+            span.OperationName = otSpan.Name;
+            var traceId = otSpan.Context.TraceId.ToLSTraceId();
+            var spanId = otSpan.Context.SpanId.ToLSSpanId();
 
             span.SpanContext = new SpanContext
             {
                 SpanId = spanId, TraceId = traceId,
             };
-            span.StartTimestamp = data.StartTimestamp;
+            span.StartTimestamp = otSpan.StartTimestamp;
             span.DurationMicros = Convert.ToUInt64(Math.Abs(duration.Ticks) / 10);
 
-            foreach (var attr in data.Attributes.AttributeMap)
+            foreach (var attr in otSpan.Attributes)
             {
                 span.Tags.Add(new Tag { Key = attr.Key, StringValue = attr.Value.ToString() });
             }
 
-            foreach (var evt in data.Events.Events)
+            foreach (var evt in otSpan.Events)
             {
                 var fields = new List<Tag>();
 
                 // TODO: Make this actually pass attributes in correctly
-                fields.Add(new Tag { Key = evt.Event.Name, StringValue = evt.Event.Attributes.ToString() });
+                fields.Add(new Tag { Key = evt.Name, StringValue = evt.Attributes.ToString() });
                 span.Logs.Add(new Log { Timestamp = evt.Timestamp, Fields = fields });
             }
 

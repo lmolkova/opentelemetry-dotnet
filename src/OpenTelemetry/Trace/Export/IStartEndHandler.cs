@@ -1,4 +1,4 @@
-﻿// <copyright file="IHandler.cs" company="OpenTelemetry Authors">
+﻿// <copyright file="IStartEndHandler.cs" company="OpenTelemetry Authors">
 // Copyright 2018, OpenTelemetry Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,21 +14,23 @@
 // limitations under the License.
 // </copyright>
 
-namespace OpenTelemetry.Trace.Export
+namespace OpenTelemetry.Trace
 {
-    using System.Collections.Generic;
-    using System.Threading.Tasks;
-
     /// <summary>
-    /// Exporter handler.
+    /// Start event handler.
     /// </summary>
-    public interface IHandler
+    public interface IStartEndHandler
     {
         /// <summary>
-        /// Exports the list of spans to the backend.
+        /// Called when span is being started.
         /// </summary>
-        /// <param name="spanDataList">Collection of spans to export.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous export operation.</returns>
-        Task ExportAsync(IEnumerable<SpanData> spanDataList);
+        /// <param name="span">Span that just started.</param>
+        void OnStart(Span span);
+
+        /// <summary>
+        /// Called when span is just ended.
+        /// </summary>
+        /// <param name="span">Span that was just ended.</param>
+        void OnEnd(Span span);
     }
 }

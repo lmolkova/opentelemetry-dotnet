@@ -16,7 +16,6 @@
 
 namespace OpenTelemetry.Trace
 {
-    using System;
     using OpenTelemetry.Context;
     using OpenTelemetry.Context.Propagation;
 
@@ -53,15 +52,6 @@ namespace OpenTelemetry.Trace
         public ISpanBuilder SpanBuilder(string spanName)
         {
             return new NoopSpanBuilder(spanName);
-        }
-
-        /// <inheritdoc/>
-        public void RecordSpanData(SpanData span)
-        {
-            if (span == null)
-            {
-                throw new ArgumentNullException(nameof(span));
-            }
         }
     }
 }

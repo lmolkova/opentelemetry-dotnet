@@ -1,4 +1,4 @@
-﻿// <copyright file="TimedEvent.cs" company="OpenTelemetry Authors">
+﻿// <copyright file="TraceParams.cs" company="OpenTelemetry Authors">
 // Copyright 2018, OpenTelemetry Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,37 +14,39 @@
 // limitations under the License.
 // </copyright>
 
-namespace OpenTelemetry.Trace.Export
+namespace OpenTelemetry.Trace.Config
 {
     using System;
-    using OpenTelemetry.Abstractions.Utils;
+    using OpenTelemetry.Trace.Sampler;
 
-    public sealed class TimedEvent<T> : ITimedEvent<T>
+    /// <inheritdoc/>
+    public sealed class TraceParams : ITraceParams
     {
-        internal TimedEvent(DateTime timestamp, T @event)
+        /// <summary>
+        /// Default trace parameters.
+        /// </summary>
+        public static readonly ITraceParams Default = new TraceParams(Samplers.AlwaysSample);
+
+        internal TraceParams(ISampler sampler)
         {
-            this.Timestamp = timestamp;
-            this.Event = @event;
+            this.Sampler = sampler ?? throw new ArgumentNullException(nameof(sampler));
         }
 
-        public DateTime Timestamp { get; }
+        /// <inheritdoc/>
+        public ISampler Sampler { get; }
 
-        public T Event { get; }
-
-        public static TimedEvent<T> Create(DateTime timestamp, T @event)
+        /// <inheritdoc/>
+        public TraceParamsBuilder ToBuilder()
         {
-            return timestamp == default
-                ? new TimedEvent<T>(PreciseTimestamp.GetUtcNow(), @event)
-                : new TimedEvent<T>(timestamp, @event);
+            return new TraceParamsBuilder(this);
         }
 
         /// <inheritdoc/>
         public override string ToString()
         {
-            return "TimedEvent"
+            return nameof(TraceParams)
                 + "{"
-                + nameof(this.Timestamp) + "=" + this.Timestamp + ", "
-                + nameof(this.Event) + "=" + this.Event
+                + nameof(this.Sampler) + "=" + this.Sampler
                 + "}";
         }
 
@@ -56,10 +58,9 @@ namespace OpenTelemetry.Trace.Export
                 return true;
             }
 
-            if (o is TimedEvent<T> that)
+            if (o is TraceParams that)
             {
-                return this.Timestamp.Equals(that.Timestamp)
-                     && this.Event.Equals(that.Event);
+                return this.Sampler.Equals(that.Sampler);
             }
 
             return false;
@@ -70,9 +71,7 @@ namespace OpenTelemetry.Trace.Export
         {
             var h = 1;
             h *= 1000003;
-            h ^= this.Timestamp.GetHashCode();
-            h *= 1000003;
-            h ^= this.Event.GetHashCode();
+            h ^= this.Sampler.GetHashCode();
             return h;
         }
     }

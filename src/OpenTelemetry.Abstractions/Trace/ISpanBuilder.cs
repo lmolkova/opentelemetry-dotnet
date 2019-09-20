@@ -14,6 +14,8 @@
 // limitations under the License.
 // </copyright>
 
+using System;
+
 namespace OpenTelemetry.Trace
 {
     using System.Collections.Generic;
@@ -108,6 +110,13 @@ namespace OpenTelemetry.Trace
         /// <param name="recordEvents">Value indicating whether to record span.</param>
         /// <returns>This span builder for chaining.</returns>
         ISpanBuilder SetRecordEvents(bool recordEvents);
+
+        /// <summary>
+        ///  Set the start timestamp value.
+        /// </summary>
+        /// <param name="startTimestamp">Start timestamp to set on the span.</param>
+        /// <returns>This span builder for chaining.</returns>
+        ISpanBuilder SetStartTimestamp(DateTime startTimestamp);
 
         /// <summary>
         /// Starts the span.

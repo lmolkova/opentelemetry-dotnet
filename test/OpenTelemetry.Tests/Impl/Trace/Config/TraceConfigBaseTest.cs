@@ -36,10 +36,6 @@ namespace OpenTelemetry.Trace.Config.Test
                 TraceParams.Default
                     .ToBuilder()
                     .SetSampler(Samplers.AlwaysSample)
-                    .SetMaxNumberOfAttributes(8)
-                    .SetMaxNumberOfEvents(9)
-                    .SetMaxNumberOfMessageEvents(10)
-                    .SetMaxNumberOfLinks(11)
                     .Build();
             traceConfig.UpdateActiveTraceParams(traceParams);
             Assert.Equal(TraceParams.Default, traceConfig.ActiveTraceParams);

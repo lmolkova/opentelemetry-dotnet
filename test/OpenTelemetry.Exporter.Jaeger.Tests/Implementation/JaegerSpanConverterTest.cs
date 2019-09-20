@@ -1,4 +1,4 @@
-// <copyright file="JaegerSpanConverterTest.cs" company="OpenTelemetry Authors">
+﻿// <copyright file="JaegerSpanConverterTest.cs" company="OpenTelemetry Authors">
 // Copyright 2018, OpenTelemetry Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,14 +16,8 @@
 
 namespace OpenTelemetry.Exporter.Jaeger.Tests.Implementation
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Diagnostics;
     using System.Linq;
     using OpenTelemetry.Exporter.Jaeger.Implementation;
-    using OpenTelemetry.Resources;
-    using OpenTelemetry.Trace;
-    using OpenTelemetry.Trace.Export;
     using Xunit;
 
     public class JaegerSpanConverterTest
@@ -39,81 +33,13 @@ namespace OpenTelemetry.Exporter.Jaeger.Tests.Implementation
         [Fact]
         public void JaegerSpanConverterTest_ConvertSpanToJaegerSpan_AllPropertiesSet()
         {
-            var startTimestamp = DateTime.Now;
-            var endTimestamp = startTimestamp.AddSeconds(60);
-            var eventTimestamp = DateTime.Now;
+            var span = SpanHelper.CreateTestSpan();
+            var traceIdAsInt = new Int128(span.Context.TraceId);
+            var spanIdAsInt = new Int128(span.Context.SpanId);
+            var linkTraceIdAsInt = new Int128(span.Links.Single().Context.TraceId);
+            var linkSpanIdAsInt = new Int128(span.Links.Single().Context.SpanId);
 
-            var traceId = ActivityTraceId.CreateRandom();
-            var traceIdAsInt = new Int128(traceId);
-            var spanId = ActivitySpanId.CreateRandom();
-            var spanIdAsInt = new Int128(spanId);
-            var parentSpanId = ActivitySpanId.CreateRandom();
-            var attributes = Attributes.Create(new Dictionary<string, object>{
-                { "stringKey", "value"},
-                { "longKey", 1L},
-                { "longKey2", 1 },
-                { "doubleKey", 1D},
-                { "doubleKey2", 1F},
-                { "boolKey", true},
-            }, 0);
-            var events = TimedEvents<IEvent>.Create(new List<ITimedEvent<IEvent>>
-            {
-                TimedEvent<IEvent>.Create(
-                    eventTimestamp,
-                    Event.Create(
-                        "Event1",
-                        new Dictionary<string, object>
-                        {
-                            { "key", "value" },
-                        }
-                    )
-                ),
-                TimedEvent<IEvent>.Create(
-                    eventTimestamp,
-                    Event.Create(
-                        "Event2",
-                        new Dictionary<string, object>
-                        {
-                            { "key", "value" },
-                        }
-                    )
-                ),
-            }, 0);
-
-            var linkedSpanId = ActivitySpanId.CreateRandom();
-
-            var link = Link.FromSpanContext(SpanContext.Create(
-                    traceId,
-                    linkedSpanId,
-                    ActivityTraceFlags.Recorded,
-                    Tracestate.Empty));
-
-            var linkTraceIdAsInt = new Int128(link.Context.TraceId);
-            var linkSpanIdAsInt = new Int128(link.Context.SpanId);
-
-            var links = LinkList.Create(new List<ILink> { link }, 0);
-
-            var spanData = SpanData.Create(
-                SpanContext.Create(
-                    traceId,
-                    spanId,
-                    ActivityTraceFlags.Recorded,
-                    Tracestate.Empty
-                ),
-                parentSpanId,
-                Resource.Empty,
-                "Name",
-                startTimestamp,
-                attributes,
-                events,
-                links,
-                null,
-                Status.Ok,
-                SpanKind.Client,
-                endTimestamp
-            );
-
-            var jaegerSpan = spanData.ToJaegerSpan();
+            var jaegerSpan = span.ToJaegerSpan();
 
             Assert.Equal("Name", jaegerSpan.OperationName);
             Assert.Equal(2, jaegerSpan.Logs.Count());
@@ -121,9 +47,9 @@ namespace OpenTelemetry.Exporter.Jaeger.Tests.Implementation
             Assert.Equal(traceIdAsInt.High, jaegerSpan.TraceIdHigh);
             Assert.Equal(traceIdAsInt.Low, jaegerSpan.TraceIdLow);
             Assert.Equal(spanIdAsInt.Low, jaegerSpan.SpanId);
-            Assert.Equal(new Int128(parentSpanId).Low, jaegerSpan.ParentSpanId);
+            Assert.Equal(new Int128(span.ParentSpanId).Low, jaegerSpan.ParentSpanId);
 
-            Assert.Equal(links.Links.Count(), jaegerSpan.References.Count());
+            Assert.Equal(span.Links.Count(), jaegerSpan.References.Count());
             var references = jaegerSpan.References.ToArray();
             var jaegerRef = references[0];
             Assert.Equal(linkTraceIdAsInt.High, jaegerRef.TraceIdHigh);
@@ -132,8 +58,8 @@ namespace OpenTelemetry.Exporter.Jaeger.Tests.Implementation
 
             Assert.Equal(0x1, jaegerSpan.Flags);
 
-            Assert.Equal(startTimestamp.ToEpochMicroseconds(), jaegerSpan.StartTime);
-            Assert.Equal(endTimestamp.ToEpochMicroseconds() - startTimestamp.ToEpochMicroseconds(), jaegerSpan.Duration);
+            Assert.Equal(span.StartTimestamp.ToEpochMicroseconds(), jaegerSpan.StartTime);
+            Assert.Equal((span.EndTimestamp - span.StartTimestamp).TotalMilliseconds * 1000, jaegerSpan.Duration);
 
             var tags = jaegerSpan.JaegerTags.ToArray();
             var tag = tags[0];
@@ -163,8 +89,8 @@ namespace OpenTelemetry.Exporter.Jaeger.Tests.Implementation
 
             var logs = jaegerSpan.Logs.ToArray();
             var jaegerLog = logs[0];
-            Assert.Equal(events.Events.First().Timestamp.ToEpochMicroseconds(), jaegerLog.Timestamp);
-            Assert.Equal(jaegerLog.Fields.Count(), 2);
+            Assert.Equal(span.Events.First().Timestamp.ToEpochMicroseconds(), jaegerLog.Timestamp);
+            Assert.Equal(2, jaegerLog.Fields.Count());
             var eventFields = jaegerLog.Fields.ToArray();
             var eventField = eventFields[0];
             Assert.Equal("key", eventField.Key);
@@ -173,9 +99,10 @@ namespace OpenTelemetry.Exporter.Jaeger.Tests.Implementation
             Assert.Equal("description", eventField.Key);
             Assert.Equal("Event1", eventField.VStr);
 
+            Assert.Equal(span.Events.First().Timestamp.ToEpochMicroseconds(), jaegerLog.Timestamp);
+
             jaegerLog = logs[1];
-            Assert.Equal(events.Events.First().Timestamp.ToEpochMicroseconds(), jaegerLog.Timestamp);
-            Assert.Equal(jaegerLog.Fields.Count(), 2);
+            Assert.Equal(2, jaegerLog.Fields.Count());
             eventFields = jaegerLog.Fields.ToArray();
             eventField = eventFields[0];
             Assert.Equal("key", eventField.Key);
@@ -188,73 +115,13 @@ namespace OpenTelemetry.Exporter.Jaeger.Tests.Implementation
         [Fact]
         public void JaegerSpanConverterTest_ConvertSpanToJaegerSpan_NoAttributes()
         {
-            var startTimestamp = DateTime.Now;
-            var endTimestamp = startTimestamp.AddSeconds(60);
-            var eventTimestamp = DateTime.Now;
+            var span = SpanHelper.CreateTestSpan(setAttributes: false);
+            var traceIdAsInt = new Int128(span.Context.TraceId);
+            var spanIdAsInt = new Int128(span.Context.SpanId);
+            var linkTraceIdAsInt = new Int128(span.Links.Single().Context.TraceId);
+            var linkSpanIdAsInt = new Int128(span.Links.Single().Context.SpanId);
 
-            var traceId = ActivityTraceId.CreateRandom();
-            var traceIdAsInt = new Int128(traceId);
-            var spanId = ActivitySpanId.CreateRandom();
-            var spanIdAsInt = new Int128(spanId);
-            var parentSpanId = ActivitySpanId.CreateRandom();
-            var events = TimedEvents<IEvent>.Create(new List<ITimedEvent<IEvent>>
-            {
-                TimedEvent<IEvent>.Create(
-                    eventTimestamp,
-                    Event.Create(
-                        "Event1",
-                        new Dictionary<string, object>
-                        {
-                            { "key", "value" },
-                        }
-                    )
-                ),
-                TimedEvent<IEvent>.Create(
-                    eventTimestamp,
-                    Event.Create(
-                        "Event2",
-                        new Dictionary<string, object>
-                        {
-                            { "key", "value" },
-                        }
-                    )
-                ),
-            }, 0);
-
-            var linkedSpanId = ActivitySpanId.CreateRandom();
-
-            var link = Link.FromSpanContext(SpanContext.Create(
-                    traceId,
-                    linkedSpanId,
-                    ActivityTraceFlags.Recorded,
-                    Tracestate.Empty));
-
-            var linkTraceIdAsInt = new Int128(link.Context.TraceId);
-            var linkSpanIdAsInt = new Int128(link.Context.SpanId);
-
-            var links = LinkList.Create(new List<ILink> { link }, 0);
-
-            var spanData = SpanData.Create(
-                SpanContext.Create(
-                    traceId,
-                    spanId,
-                    ActivityTraceFlags.Recorded,
-                    Tracestate.Empty
-                ),
-                parentSpanId,
-                Resource.Empty,
-                "Name",
-                startTimestamp,
-                null,
-                events,
-                links,
-                null,
-                Status.Ok,
-                SpanKind.Client,
-                endTimestamp
-            );
-
-            var jaegerSpan = spanData.ToJaegerSpan();
+            var jaegerSpan = span.ToJaegerSpan();
 
             Assert.Equal("Name", jaegerSpan.OperationName);
             Assert.Equal(2, jaegerSpan.Logs.Count());
@@ -262,9 +129,9 @@ namespace OpenTelemetry.Exporter.Jaeger.Tests.Implementation
             Assert.Equal(traceIdAsInt.High, jaegerSpan.TraceIdHigh);
             Assert.Equal(traceIdAsInt.Low, jaegerSpan.TraceIdLow);
             Assert.Equal(spanIdAsInt.Low, jaegerSpan.SpanId);
-            Assert.Equal(new Int128(parentSpanId).Low, jaegerSpan.ParentSpanId);
+            Assert.Equal(new Int128(span.ParentSpanId).Low, jaegerSpan.ParentSpanId);
 
-            Assert.Equal(links.Links.Count(), jaegerSpan.References.Count());
+            Assert.Equal(span.Links.Count(), jaegerSpan.References.Count());
             var references = jaegerSpan.References.ToArray();
             var jaegerRef = references[0];
             Assert.Equal(linkTraceIdAsInt.High, jaegerRef.TraceIdHigh);
@@ -273,15 +140,15 @@ namespace OpenTelemetry.Exporter.Jaeger.Tests.Implementation
 
             Assert.Equal(0x1, jaegerSpan.Flags);
 
-            Assert.Equal(startTimestamp.ToEpochMicroseconds(), jaegerSpan.StartTime);
-            Assert.Equal(endTimestamp.ToEpochMicroseconds() - startTimestamp.ToEpochMicroseconds(), jaegerSpan.Duration);
+            Assert.Equal(span.StartTimestamp.ToEpochMicroseconds(), jaegerSpan.StartTime);
+            Assert.Equal((span.EndTimestamp - span.StartTimestamp).TotalMilliseconds * 1000, jaegerSpan.Duration);
 
             Assert.Empty(jaegerSpan.JaegerTags);
 
             var logs = jaegerSpan.Logs.ToArray();
             var jaegerLog = logs[0];
-            Assert.Equal(events.Events.First().Timestamp.ToEpochMicroseconds(), jaegerLog.Timestamp);
-            Assert.Equal(jaegerLog.Fields.Count(), 2);
+            Assert.Equal(span.Events.First().Timestamp.ToEpochMicroseconds(), jaegerLog.Timestamp);
+            Assert.Equal(2, jaegerLog.Fields.Count());
             var eventFields = jaegerLog.Fields.ToArray();
             var eventField = eventFields[0];
             Assert.Equal("key", eventField.Key);
@@ -290,9 +157,10 @@ namespace OpenTelemetry.Exporter.Jaeger.Tests.Implementation
             Assert.Equal("description", eventField.Key);
             Assert.Equal("Event1", eventField.VStr);
 
+            Assert.Equal(span.Events.First().Timestamp.ToEpochMicroseconds(), jaegerLog.Timestamp);
+
             jaegerLog = logs[1];
-            Assert.Equal(events.Events.First().Timestamp.ToEpochMicroseconds(), jaegerLog.Timestamp);
-            Assert.Equal(jaegerLog.Fields.Count(), 2);
+            Assert.Equal(2, jaegerLog.Fields.Count());
             eventFields = jaegerLog.Fields.ToArray();
             eventField = eventFields[0];
             Assert.Equal("key", eventField.Key);
@@ -305,58 +173,13 @@ namespace OpenTelemetry.Exporter.Jaeger.Tests.Implementation
         [Fact]
         public void JaegerSpanConverterTest_ConvertSpanToJaegerSpan_NoEvents()
         {
-            var startTimestamp = DateTime.Now;
-            var endTimestamp = startTimestamp.AddSeconds(60);
-            var eventTimestamp = DateTime.Now;
+            var span = SpanHelper.CreateTestSpan(addEvents: false);
+            var traceIdAsInt = new Int128(span.Context.TraceId);
+            var spanIdAsInt = new Int128(span.Context.SpanId);
+            var linkTraceIdAsInt = new Int128(span.Links.Single().Context.TraceId);
+            var linkSpanIdAsInt = new Int128(span.Links.Single().Context.SpanId);
 
-            var traceId = ActivityTraceId.CreateRandom();
-            var traceIdAsInt = new Int128(traceId);
-            var spanId = ActivitySpanId.CreateRandom();
-            var spanIdAsInt = new Int128(spanId);
-            var parentSpanId = ActivitySpanId.CreateRandom();
-            var attributes = Attributes.Create(new Dictionary<string, object>{
-                { "stringKey", "value"},
-                { "longKey", 1L},
-                { "longKey2", 1 },
-                { "doubleKey", 1D},
-                { "doubleKey2", 1F},
-                { "boolKey", true},
-            }, 0);
-
-            var linkedSpanId = ActivitySpanId.CreateRandom();
-
-            var link = Link.FromSpanContext(SpanContext.Create(
-                    traceId,
-                    linkedSpanId,
-                    ActivityTraceFlags.Recorded,
-                    Tracestate.Empty));
-
-            var linkTraceIdAsInt = new Int128(link.Context.TraceId);
-            var linkSpanIdAsInt = new Int128(link.Context.SpanId);
-
-            var links = LinkList.Create(new List<ILink> { link }, 0);
-
-            var spanData = SpanData.Create(
-                SpanContext.Create(
-                    traceId,
-                    spanId,
-                    ActivityTraceFlags.Recorded,
-                    Tracestate.Empty
-                ),
-                parentSpanId,
-                Resource.Empty,
-                "Name",
-                startTimestamp,
-                attributes,
-                null,
-                links,
-                null,
-                Status.Ok,
-                SpanKind.Client,
-                endTimestamp
-            );
-
-            var jaegerSpan = spanData.ToJaegerSpan();
+            var jaegerSpan = span.ToJaegerSpan();
 
             Assert.Equal("Name", jaegerSpan.OperationName);
             Assert.Empty(jaegerSpan.Logs);
@@ -364,9 +187,9 @@ namespace OpenTelemetry.Exporter.Jaeger.Tests.Implementation
             Assert.Equal(traceIdAsInt.High, jaegerSpan.TraceIdHigh);
             Assert.Equal(traceIdAsInt.Low, jaegerSpan.TraceIdLow);
             Assert.Equal(spanIdAsInt.Low, jaegerSpan.SpanId);
-            Assert.Equal(new Int128(parentSpanId).Low, jaegerSpan.ParentSpanId);
+            Assert.Equal(new Int128(span.ParentSpanId).Low, jaegerSpan.ParentSpanId);
 
-            Assert.Equal(links.Links.Count(), jaegerSpan.References.Count());
+            Assert.Equal(span.Links.Count(), jaegerSpan.References.Count());
             var references = jaegerSpan.References.ToArray();
             var jaegerRef = references[0];
             Assert.Equal(linkTraceIdAsInt.High, jaegerRef.TraceIdHigh);
@@ -375,8 +198,9 @@ namespace OpenTelemetry.Exporter.Jaeger.Tests.Implementation
 
             Assert.Equal(0x1, jaegerSpan.Flags);
 
-            Assert.Equal(startTimestamp.ToEpochMicroseconds(), jaegerSpan.StartTime);
-            Assert.Equal(endTimestamp.ToEpochMicroseconds() - startTimestamp.ToEpochMicroseconds(), jaegerSpan.Duration);
+            Assert.Equal(span.StartTimestamp.ToEpochMicroseconds(), jaegerSpan.StartTime);
+            Assert.Equal(span.EndTimestamp.ToEpochMicroseconds()
+                         - span.StartTimestamp.ToEpochMicroseconds(), jaegerSpan.Duration);
 
             var tags = jaegerSpan.JaegerTags.ToArray();
             var tag = tags[0];
@@ -408,68 +232,11 @@ namespace OpenTelemetry.Exporter.Jaeger.Tests.Implementation
         [Fact]
         public void JaegerSpanConverterTest_ConvertSpanToJaegerSpan_NoLinks()
         {
-            var startTimestamp = DateTime.Now;
-            var endTimestamp = startTimestamp.AddSeconds(60);
-            var eventTimestamp = DateTime.Now;
+            var span = SpanHelper.CreateTestSpan(addLinks: false);
+            var traceIdAsInt = new Int128(span.Context.TraceId);
+            var spanIdAsInt = new Int128(span.Context.SpanId);
 
-            var traceId = ActivityTraceId.CreateRandom();
-            var traceIdAsInt = new Int128(traceId);
-            var spanId = ActivitySpanId.CreateRandom();
-            var spanIdAsInt = new Int128(spanId);
-            var parentSpanId = ActivitySpanId.CreateRandom();
-            var attributes = Attributes.Create(new Dictionary<string, object>{
-                { "stringKey", "value"},
-                { "longKey", 1L},
-                { "longKey2", 1 },
-                { "doubleKey", 1D},
-                { "doubleKey2", 1F},
-                { "boolKey", true},
-            }, 0);
-            var events = TimedEvents<IEvent>.Create(new List<ITimedEvent<IEvent>>
-            {
-                TimedEvent<IEvent>.Create(
-                    eventTimestamp,
-                    Event.Create(
-                        "Event1",
-                        new Dictionary<string, object>
-                        {
-                            { "key", "value" },
-                        }
-                    )
-                ),
-                TimedEvent<IEvent>.Create(
-                    eventTimestamp,
-                    Event.Create(
-                        "Event2",
-                        new Dictionary<string, object>
-                        {
-                            { "key", "value" },
-                        }
-                    )
-                ),
-            }, 0);
-
-            var spanData = SpanData.Create(
-                SpanContext.Create(
-                    traceId,
-                    spanId,
-                    ActivityTraceFlags.Recorded,
-                    Tracestate.Empty
-                ),
-                parentSpanId,
-                Resource.Empty,
-                "Name",
-                startTimestamp,
-                attributes,
-                events,
-                null,
-                null,
-                Status.Ok,
-                SpanKind.Client,
-                endTimestamp
-            );
-
-            var jaegerSpan = spanData.ToJaegerSpan();
+            var jaegerSpan = span.ToJaegerSpan();
 
             Assert.Equal("Name", jaegerSpan.OperationName);
             Assert.Equal(2, jaegerSpan.Logs.Count());
@@ -477,14 +244,15 @@ namespace OpenTelemetry.Exporter.Jaeger.Tests.Implementation
             Assert.Equal(traceIdAsInt.High, jaegerSpan.TraceIdHigh);
             Assert.Equal(traceIdAsInt.Low, jaegerSpan.TraceIdLow);
             Assert.Equal(spanIdAsInt.Low, jaegerSpan.SpanId);
-            Assert.Equal(new Int128(parentSpanId).Low, jaegerSpan.ParentSpanId);
+            Assert.Equal(new Int128(span.ParentSpanId).Low, jaegerSpan.ParentSpanId);
 
             Assert.Empty(jaegerSpan.References);
 
             Assert.Equal(0x1, jaegerSpan.Flags);
 
-            Assert.Equal(startTimestamp.ToEpochMicroseconds(), jaegerSpan.StartTime);
-            Assert.Equal(endTimestamp.ToEpochMicroseconds() - startTimestamp.ToEpochMicroseconds(), jaegerSpan.Duration);
+            Assert.Equal(span.StartTimestamp.ToEpochMicroseconds(), jaegerSpan.StartTime);
+            Assert.Equal(span.EndTimestamp.ToEpochMicroseconds()
+                         - span.StartTimestamp.ToEpochMicroseconds(), jaegerSpan.Duration);
 
             var tags = jaegerSpan.JaegerTags.ToArray();
             var tag = tags[0];
@@ -514,7 +282,7 @@ namespace OpenTelemetry.Exporter.Jaeger.Tests.Implementation
 
             var logs = jaegerSpan.Logs.ToArray();
             var jaegerLog = logs[0];
-            Assert.Equal(events.Events.First().Timestamp.ToEpochMicroseconds(), jaegerLog.Timestamp);
+            Assert.Equal(span.Events.First().Timestamp.ToEpochMicroseconds(), jaegerLog.Timestamp);
             Assert.Equal(2, jaegerLog.Fields.Count());
             var eventFields = jaegerLog.Fields.ToArray();
             var eventField = eventFields[0];
@@ -523,10 +291,10 @@ namespace OpenTelemetry.Exporter.Jaeger.Tests.Implementation
             eventField = eventFields[1];
             Assert.Equal("description", eventField.Key);
             Assert.Equal("Event1", eventField.VStr);
+            Assert.Equal(span.Events.First().Timestamp.ToEpochMicroseconds(), jaegerLog.Timestamp);
 
             jaegerLog = logs[1];
-            Assert.Equal(events.Events.First().Timestamp.ToEpochMicroseconds(), jaegerLog.Timestamp);
-            Assert.Equal(jaegerLog.Fields.Count(), 2);
+            Assert.Equal(2, jaegerLog.Fields.Count());
             eventFields = jaegerLog.Fields.ToArray();
             eventField = eventFields[0];
             Assert.Equal("key", eventField.Key);

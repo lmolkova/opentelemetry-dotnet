@@ -11,6 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Trace\Config\" />
     <Folder Include="Trace\Internal\" />
   </ItemGroup>
 </Project>

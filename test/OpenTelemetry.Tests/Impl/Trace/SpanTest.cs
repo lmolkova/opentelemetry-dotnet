@@ -50,39 +50,6 @@ namespace OpenTelemetry.Trace.Test
         }
 
         [Fact]
-        public void ToSpanData_NoRecordEvents()
-        {
-            var link = SpanContext.Create(ActivityTraceId.CreateRandom(), ActivitySpanId.CreateRandom(),
-                ActivityTraceFlags.None, Tracestate.Empty);
-
-            var activity = new Activity(SpanName)
-                .SetIdFormat(ActivityIdFormat.W3C)
-                .Start();
-
-            Assert.False(activity.Recorded);
-            
-            var span =
-                Span.StartSpan(
-                    activity,
-                    Tracestate.Empty,
-                    SpanKind.Internal,
-                    TraceParams.Default,
-                    startEndHandler);
-            // Check that adding trace events after Span#End() does not throw any exception.
-            foreach (var attribute in attributes)
-            {
-                span.SetAttribute(attribute);
-            }
-
-            span.AddEvent(Event.Create(EventDescription));
-            span.AddEvent(EventDescription, attributes);
-            span.AddLink(Link.FromSpanContext(link));
-            span.End();
-            // exception.expect(IllegalStateException);
-            Assert.Throws<InvalidOperationException>(() => ((Span)span).ToSpanData());
-        }
-
-        [Fact]
         public void GetSpanContextFromActivity()
         {
             var tracestate = Tracestate.Builder.Set("k1", "v1").Build();
@@ -95,8 +62,8 @@ namespace OpenTelemetry.Trace.Test
                     activity,
                     tracestate,
                     SpanKind.Internal,
-                    TraceParams.Default,
-                    startEndHandler);
+                    startEndHandler,
+                    default);
             Assert.NotNull(span.Context);
             Assert.Equal(activity.TraceId, span.Context.TraceId);
             Assert.Equal(activity.SpanId, span.Context.SpanId);
@@ -118,8 +85,8 @@ namespace OpenTelemetry.Trace.Test
                     activity,
                     tracestate,
                     SpanKind.Internal,
-                    TraceParams.Default,
-                    startEndHandler);
+                    startEndHandler,
+                    default);
             Assert.NotNull(span.Context);
             Assert.Equal(activity.TraceId, span.Context.TraceId);
             Assert.Equal(activity.SpanId, span.Context.SpanId);
@@ -138,13 +105,12 @@ namespace OpenTelemetry.Trace.Test
             activity.ActivityTraceFlags |= ActivityTraceFlags.Recorded;
 
             var spanStartTime = PreciseTimestamp.GetUtcNow();
-            var span =
-                Span.StartSpan(
+            var span = (Span) Span.StartSpan(
                     activity,
                     Tracestate.Empty,
                     SpanKind.Internal,
-                    TraceParams.Default,
-                    startEndHandler);
+                    startEndHandler,
+                    PreciseTimestamp.GetUtcNow());
             var spaEndTime = PreciseTimestamp.GetUtcNow();
             span.End();
             // Check that adding trace events after Span#End() does not throw any exception and are not
@@ -161,14 +127,13 @@ namespace OpenTelemetry.Trace.Test
             span.AddEvent(Event.Create(EventDescription));
             span.AddEvent(EventDescription, attributes);
             span.AddLink(Link.FromSpanContext(link));
-            var spanData = ((Span)span).ToSpanData();
 
-            AssertApproxSameTimestamp(spanData.StartTimestamp, spanStartTime);
-            Assert.Empty(spanData.Attributes.AttributeMap);
-            Assert.Empty(spanData.Events.Events);
-            Assert.Empty(spanData.Links.Links);
-            Assert.Equal(Status.Ok, spanData.Status);
-            AssertApproxSameTimestamp(spaEndTime, spanData.EndTimestamp);
+            AssertApproxSameTimestamp(span.StartTimestamp, spanStartTime);
+            Assert.Empty(span.Attributes);
+            Assert.Empty(span.Events);
+            Assert.Empty(span.Links);
+            Assert.Equal(Status.Ok, span.Status);
+            AssertApproxSameTimestamp(spaEndTime, span.EndTimestamp);
         }
 
         [Fact]
@@ -183,13 +148,12 @@ namespace OpenTelemetry.Trace.Test
             activity.ActivityTraceFlags |= ActivityTraceFlags.Recorded;
 
             var spanStartTime = PreciseTimestamp.GetUtcNow();
-            var span =
-                Span.StartSpan(
+            var span = (Span) Span.StartSpan(
                     activity,
                     Tracestate.Empty,
                     SpanKind.Internal,
-                    TraceParams.Default,
-                    startEndHandler);
+                    startEndHandler,
+                    spanStartTime);
 
             span.SetAttribute(
                 "MySingleStringAttributeKey",
@@ -208,34 +172,31 @@ namespace OpenTelemetry.Trace.Test
 
             var link = Link.FromSpanContext(contextLink);
             span.AddLink(link);
-            var spanData = ((Span)span).ToSpanData();
-            Assert.Equal(activity.TraceId, spanData.Context.TraceId);
-            Assert.Equal(activity.SpanId, spanData.Context.SpanId);
-            Assert.Equal(activity.ParentSpanId, spanData.ParentSpanId);
-            Assert.Equal(activity.ActivityTraceFlags, spanData.Context.TraceOptions);
-            Assert.Same(Tracestate.Empty, spanData.Context.Tracestate);
 
-            Assert.Equal(SpanName, spanData.Name);
-            Assert.Equal(activity.ParentSpanId, spanData.ParentSpanId);
-            Assert.Equal(0, spanData.Attributes.DroppedAttributesCount);
-            spanData.Attributes.AssertAreSame(expectedAttributes);
-            Assert.Equal(0, spanData.Events.DroppedEventsCount);
-            Assert.Equal(2, spanData.Events.Events.Count());
+            Assert.Equal(activity.TraceId, span.Context.TraceId);
+            Assert.Equal(activity.SpanId, span.Context.SpanId);
+            Assert.Equal(activity.ParentSpanId, span.ParentSpanId);
+            Assert.Equal(activity.ActivityTraceFlags, span.Context.TraceOptions);
+            Assert.Same(Tracestate.Empty, span.Context.Tracestate);
 
-            AssertApproxSameTimestamp(spanData.Events.Events.ToList()[0].Timestamp, firstEventTime);
-            AssertApproxSameTimestamp(spanData.Events.Events.ToList()[1].Timestamp, secondEventTime);
+            Assert.Equal(SpanName, span.Name);
+            Assert.Equal(activity.ParentSpanId, span.ParentSpanId);
+            span.Attributes.AssertAreSame(expectedAttributes);
+            Assert.Equal(2, span.Events.Count());
 
-            Assert.Equal(Event.Create(EventDescription), spanData.Events.Events.ToList()[0].Event);
+            AssertApproxSameTimestamp(span.Events.ToList()[0].Timestamp, firstEventTime);
+            AssertApproxSameTimestamp(span.Events.ToList()[1].Timestamp, secondEventTime);
 
-            Assert.Equal(Event.Create(EventDescription, attributes), spanData.Events.Events.ToList()[1].Event);
-            Assert.Equal(0, spanData.Links.DroppedLinksCount);
-            Assert.Single(spanData.Links.Links);
-            Assert.Equal(link, spanData.Links.Links.First());
+            Assert.Equal(Event.Create(EventDescription), span.Events.ToList()[0]);
 
-            AssertApproxSameTimestamp(spanStartTime, spanData.StartTimestamp);
+            Assert.Equal(Event.Create(EventDescription, default, attributes), span.Events.ToList()[1]);
+            Assert.Single(span.Links);
+            Assert.Equal(link, span.Links.First());
 
-            Assert.False(spanData.Status.IsValid);
-            Assert.Equal(default, spanData.EndTimestamp);
+            Assert.Equal(spanStartTime, span.StartTimestamp);
+
+            Assert.True(span.Status.IsValid);
+            Assert.Equal(default, span.EndTimestamp);
 
             var startEndMock = Mock.Get<IStartEndHandler>(startEndHandler);
             startEndMock.Verify(s => s.OnStart(span), Times.Once);
@@ -258,8 +219,8 @@ namespace OpenTelemetry.Trace.Test
                     activity,
                     Tracestate.Empty,
                     SpanKind.Internal,
-                    TraceParams.Default,
-                    startEndHandler);
+                    startEndHandler,
+                    PreciseTimestamp.GetUtcNow());
 
             span.SetAttribute(
                 "MySingleStringAttributeKey",
@@ -284,30 +245,27 @@ namespace OpenTelemetry.Trace.Test
             var spanEndTime = PreciseTimestamp.GetUtcNow();
             span.End();
 
-            var spanData = ((Span)span).ToSpanData();
-            Assert.Equal(activity.TraceId, spanData.Context.TraceId);
-            Assert.Equal(activity.SpanId, spanData.Context.SpanId);
-            Assert.Equal(activity.ParentSpanId, spanData.ParentSpanId);
-            Assert.Equal(activity.ActivityTraceFlags, spanData.Context.TraceOptions);
+            Assert.Equal(activity.TraceId, span.Context.TraceId);
+            Assert.Equal(activity.SpanId, span.Context.SpanId);
+            Assert.Equal(activity.ParentSpanId, span.ParentSpanId);
+            Assert.Equal(activity.ActivityTraceFlags, span.Context.TraceOptions);
 
-            Assert.Equal(SpanName, spanData.Name);
-            Assert.Equal(activity.ParentSpanId, spanData.ParentSpanId);
-            Assert.Equal(0, spanData.Attributes.DroppedAttributesCount);
+            Assert.Equal(SpanName, span.Name);
+            Assert.Equal(activity.ParentSpanId, span.ParentSpanId);
 
-            spanData.Attributes.AssertAreSame(expectedAttributes);
-            Assert.Equal(0, spanData.Events.DroppedEventsCount);
-            Assert.Equal(2, spanData.Events.Events.Count());
+            span.Attributes.AssertAreSame(expectedAttributes);
+            Assert.Equal(2, span.Events.Count());
 
-            AssertApproxSameTimestamp(spanData.Events.Events.ToList()[0].Timestamp, firstEventTime);
-            AssertApproxSameTimestamp(spanData.Events.Events.ToList()[1].Timestamp, secondEventTime);
+            AssertApproxSameTimestamp(span.Events.ToList()[0].Timestamp, firstEventTime);
+            AssertApproxSameTimestamp(span.Events.ToList()[1].Timestamp, secondEventTime);
 
-            Assert.Equal(Event.Create(EventDescription), spanData.Events.Events.ToList()[0].Event);
-            Assert.Equal(0, spanData.Links.DroppedLinksCount);
-            Assert.Single(spanData.Links.Links);
-            Assert.Equal(link, spanData.Links.Links.First());
-            AssertApproxSameTimestamp(spanData.StartTimestamp, spanStartTime);
-            Assert.Equal(Status.Cancelled, spanData.Status);
-            AssertApproxSameTimestamp(spanEndTime, spanData.EndTimestamp);
+            Assert.Equal(Event.Create(EventDescription), span.Events.ToList()[0]);
+
+            Assert.Single(span.Links);
+            Assert.Equal(link, span.Links.First());
+            AssertApproxSameTimestamp(span.StartTimestamp, spanStartTime);
+            Assert.Equal(Status.Cancelled, span.Status);
+            AssertApproxSameTimestamp(spanEndTime, span.EndTimestamp);
 
             var startEndMock = Mock.Get<IStartEndHandler>(startEndHandler);
             startEndMock.Verify(s => s.OnStart(span), Times.Once);
@@ -325,8 +283,8 @@ namespace OpenTelemetry.Trace.Test
                     activity,
                     Tracestate.Empty,
                     SpanKind.Internal,
-                    TraceParams.Default,
-                    startEndHandler);
+                    startEndHandler,
+                    default);
 
             Assert.Equal(Status.Ok, span.Status);
             ((Span)span).Status = Status.Cancelled;
@@ -349,8 +307,8 @@ namespace OpenTelemetry.Trace.Test
                     activity,
                     Tracestate.Empty,
                     SpanKind.Internal,
-                    TraceParams.Default,
-                    startEndHandler);
+                    startEndHandler,
+                    default);
 
             Assert.Equal(Status.Ok, span.Status);
             ((Span)span).Status = Status.Cancelled;
@@ -364,217 +322,6 @@ namespace OpenTelemetry.Trace.Test
         }
 
         [Fact]
-        public void DroppingAttributes()
-        {
-            var activity = new Activity(SpanName).Start();
-            activity.ActivityTraceFlags |= ActivityTraceFlags.Recorded;
-
-            var maxNumberOfAttributes = 8;
-            var traceParams =
-                TraceParams.Default.ToBuilder().SetMaxNumberOfAttributes(maxNumberOfAttributes).Build();
-            var span =
-                Span.StartSpan(
-                    activity,
-                    Tracestate.Empty,
-                    SpanKind.Internal,
-                    traceParams,
-                    startEndHandler);
-            for (var i = 0; i < 2 * maxNumberOfAttributes; i++)
-            {
-                IDictionary<string, object> attributes = new Dictionary<string, object>();
-                attributes.Add("MyStringAttributeKey" + i, i);
-                foreach (var attribute in attributes)
-                {
-                    span.SetAttribute(attribute);
-                }
-
-            }
-
-            var spanData = ((Span)span).ToSpanData();
-            Assert.Equal(maxNumberOfAttributes, spanData.Attributes.DroppedAttributesCount);
-            Assert.Equal(maxNumberOfAttributes, spanData.Attributes.AttributeMap.Count());
-            for (var i = 0; i < maxNumberOfAttributes; i++)
-            {
-                Assert.Equal(
-                    i + maxNumberOfAttributes,
-                    spanData
-                        .Attributes
-                        .GetValue("MyStringAttributeKey" + (i + maxNumberOfAttributes)));
-            }
-
-            span.End();
-            spanData = ((Span)span).ToSpanData();
-            Assert.Equal(maxNumberOfAttributes, spanData.Attributes.DroppedAttributesCount);
-            Assert.Equal(maxNumberOfAttributes, spanData.Attributes.AttributeMap.Count());
-            for (var i = 0; i < maxNumberOfAttributes; i++)
-            {
-                Assert.Equal(
-                    i + maxNumberOfAttributes,
-                    spanData
-                        .Attributes
-                        .GetValue("MyStringAttributeKey" + (i + maxNumberOfAttributes)));
-            }
-        }
-
-        [Fact]
-        public void DroppingAndAddingAttributes()
-        {
-            var activity = new Activity(SpanName).Start();
-            activity.ActivityTraceFlags |= ActivityTraceFlags.Recorded;
-
-            var maxNumberOfAttributes = 8;
-            var traceParams =
-                TraceParams.Default.ToBuilder().SetMaxNumberOfAttributes(maxNumberOfAttributes).Build();
-            var span =
-                Span.StartSpan(
-                    activity,
-                    Tracestate.Empty,
-                    SpanKind.Internal,
-                    traceParams,
-                    startEndHandler);
-            for (var i = 0; i < 2 * maxNumberOfAttributes; i++)
-            {
-                IDictionary<String, object> attributes = new Dictionary<String, object>();
-                attributes.Add("MyStringAttributeKey" + i, i);
-                foreach (var attribute in attributes)
-                {
-                    span.SetAttribute(attribute);
-                }
-
-            }
-
-            var spanData = ((Span)span).ToSpanData();
-            Assert.Equal(maxNumberOfAttributes, spanData.Attributes.DroppedAttributesCount);
-            Assert.Equal(maxNumberOfAttributes, spanData.Attributes.AttributeMap.Count());
-            for (var i = 0; i < maxNumberOfAttributes; i++)
-            {
-                Assert.Equal(
-                    i + maxNumberOfAttributes,
-                    spanData
-                        .Attributes
-                        .GetValue("MyStringAttributeKey" + (i + maxNumberOfAttributes)));
-            }
-
-            for (var i = 0; i < maxNumberOfAttributes / 2; i++)
-            {
-                IDictionary<String, object> attributes = new Dictionary<String, object>();
-                attributes.Add("MyStringAttributeKey" + i, i);
-                foreach (var attribute in attributes)
-                {
-                    span.SetAttribute(attribute);
-                }
-
-            }
-
-            spanData = ((Span)span).ToSpanData();
-            Assert.Equal(maxNumberOfAttributes * 3 / 2, spanData.Attributes.DroppedAttributesCount);
-            Assert.Equal(maxNumberOfAttributes, spanData.Attributes.AttributeMap.Count());
-            // Test that we still have in the attributes map the latest maxNumberOfAttributes / 2 entries.
-            for (var i = 0; i < maxNumberOfAttributes / 2; i++)
-            {
-                Assert.Equal(
-                    i + maxNumberOfAttributes * 3 / 2,
-                    spanData
-                        .Attributes
-                        .GetValue("MyStringAttributeKey" + (i + maxNumberOfAttributes * 3 / 2)));
-            }
-
-            // Test that we have the newest re-added initial entries.
-            for (var i = 0; i < maxNumberOfAttributes / 2; i++)
-            {
-                Assert.Equal(i,
-                    spanData.Attributes.GetValue("MyStringAttributeKey" + i));
-            }
-        }
-
-        [Fact]
-        public async Task DroppingEvents()
-        {
-            var activity = new Activity(SpanName).Start();
-            activity.ActivityTraceFlags |= ActivityTraceFlags.Recorded;
-
-            var maxNumberOfEvents = 8;
-            var traceParams =
-                TraceParams.Default.ToBuilder().SetMaxNumberOfEvents(maxNumberOfEvents).Build();
-            var span =
-                Span.StartSpan(
-                    activity,
-                    Tracestate.Empty,
-                    SpanKind.Internal,
-                    traceParams,
-                    startEndHandler);
-            var testEvent = Event.Create(EventDescription);
-            
-            var eventTimestamps = new DateTime[2 * maxNumberOfEvents];
-            
-            for (int i = 0; i < 2 * maxNumberOfEvents; i++)
-            {
-                eventTimestamps[i] = PreciseTimestamp.GetUtcNow();
-                span.AddEvent(testEvent);
-                await Task.Delay(10);
-            }
-
-            var spanData = ((Span)span).ToSpanData();
-            Assert.Equal(maxNumberOfEvents, spanData.Events.DroppedEventsCount);
-            Assert.Equal(maxNumberOfEvents, spanData.Events.Events.Count());
-
-            var events = spanData.Events.Events.ToArray();
-
-            for (int i = 0; i < maxNumberOfEvents; i++)
-            {
-                AssertApproxSameTimestamp(events[i].Timestamp, eventTimestamps[i + maxNumberOfEvents]);
-            }
-
-            span.End();
-            spanData = ((Span)span).ToSpanData();
-            Assert.Equal(maxNumberOfEvents, spanData.Events.DroppedEventsCount);
-            Assert.Equal(maxNumberOfEvents, spanData.Events.Events.Count());
-        }
-
-        [Fact]
-        public void DroppingLinks()
-        {
-            var contextLink = SpanContext.Create(ActivityTraceId.CreateRandom(), ActivitySpanId.CreateRandom(),
-                ActivityTraceFlags.None, Tracestate.Empty);
-
-            var activity = new Activity(SpanName).Start();
-            activity.ActivityTraceFlags |= ActivityTraceFlags.Recorded;
-
-            var maxNumberOfLinks = 8;
-            var traceParams =
-                TraceParams.Default.ToBuilder().SetMaxNumberOfLinks(maxNumberOfLinks).Build();
-            var span =
-                Span.StartSpan(
-                    activity,
-                    Tracestate.Empty,
-                    SpanKind.Internal,
-                    traceParams,
-                    startEndHandler);
-            var link = Link.FromSpanContext(contextLink);
-            for (var i = 0; i < 2 * maxNumberOfLinks; i++)
-            {
-                span.AddLink(link);
-            }
-
-            var spanData = ((Span)span).ToSpanData();
-            Assert.Equal(maxNumberOfLinks, spanData.Links.DroppedLinksCount);
-            Assert.Equal(maxNumberOfLinks, spanData.Links.Links.Count());
-            foreach (var actualLink in spanData.Links.Links)
-            {
-                Assert.Equal(link, actualLink);
-            }
-
-            span.End();
-            spanData = ((Span)span).ToSpanData();
-            Assert.Equal(maxNumberOfLinks, spanData.Links.DroppedLinksCount);
-            Assert.Equal(maxNumberOfLinks, spanData.Links.Links.Count());
-            foreach (var actualLink in spanData.Links.Links)
-            {
-                Assert.Equal(link, actualLink);
-            }
-        }
-
-        [Fact]
         public void BadArguments()
         {
             var activity = new Activity(SpanName).Start();
@@ -585,8 +332,8 @@ namespace OpenTelemetry.Trace.Test
                     activity,
                     Tracestate.Empty,
                     SpanKind.Internal,
-                    TraceParams.Default,
-                    startEndHandler);
+                    startEndHandler,
+                    default);
 
             Assert.Throws<ArgumentException>(() => span.Status = new Status());
             Assert.Throws<ArgumentNullException>(() => span.UpdateName(null));
@@ -619,8 +366,8 @@ namespace OpenTelemetry.Trace.Test
                     activity,
                     Tracestate.Empty,
                     SpanKind.Internal,
-                    TraceParams.Default,
                     startEndHandler,
+                    default,
                     ownsActivity: true);
             
             span.End();
@@ -643,8 +390,8 @@ namespace OpenTelemetry.Trace.Test
                     activity,
                     Tracestate.Empty,
                     SpanKind.Internal,
-                    TraceParams.Default,
                     startEndHandler,
+                    default,
                     ownsActivity: false);
 
             span.End();
@@ -670,8 +417,8 @@ namespace OpenTelemetry.Trace.Test
                     activity,
                     Tracestate.Empty,
                     SpanKind.Internal,
-                    TraceParams.Default,
                     startEndHandler,
+                    default,
                     ownsActivity: ownsActivity);
 
             var anotherActivity = new Activity(SpanName).Start();
@@ -688,7 +435,7 @@ namespace OpenTelemetry.Trace.Test
         private void AssertApproxSameTimestamp(DateTime one, DateTime two)
         {
             var timeShift = Math.Abs((one - two).TotalMilliseconds);
-            Assert.InRange(timeShift, double.Epsilon, 20);
+            Assert.InRange(timeShift, 0, 20);
         }
     }
 }

@@ -50,14 +50,14 @@ namespace OpenTelemetry.Exporter.Zipkin.Implementation
             this.serviceEndpoint = options.Endpoint?.ToString();
         }
 
-        public async Task ExportAsync(IEnumerable<SpanData> spanDataList)
+        public async Task ExportAsync(IEnumerable<Span> spanList)
         {
             var zipkinSpans = new List<ZipkinSpan>();
 
-            foreach (var data in spanDataList)
+            foreach (var data in spanList)
             {
                 bool shouldExport = true;
-                foreach (var label in data.Attributes.AttributeMap)
+                foreach (var label in data.Attributes)
                 {
                     if (label.Key == "http.url")
                     {
@@ -93,33 +93,33 @@ namespace OpenTelemetry.Exporter.Zipkin.Implementation
             }
         }
 
-        internal ZipkinSpan GenerateSpan(SpanData spanData, ZipkinEndpoint localEndpoint)
+        internal ZipkinSpan GenerateSpan(Span span, ZipkinEndpoint localEndpoint)
         {
-            var context = spanData.Context;
-            var startTimestamp = this.ToEpochMicroseconds(spanData.StartTimestamp);
-            var endTimestamp = this.ToEpochMicroseconds(spanData.EndTimestamp);
+            var context = span.Context;
+            var startTimestamp = this.ToEpochMicroseconds(span.StartTimestamp);
+            var endTimestamp = this.ToEpochMicroseconds(span.EndTimestamp);
 
             var spanBuilder =
                 ZipkinSpan.NewBuilder()
                     .ActivityTraceId(this.EncodeTraceId(context.TraceId))
                     .Id(this.EncodeSpanId(context.SpanId))
-                    .Kind(this.ToSpanKind(spanData))
-                    .Name(spanData.Name)
-                    .Timestamp(this.ToEpochMicroseconds(spanData.StartTimestamp))
+                    .Kind(this.ToSpanKind(span))
+                    .Name(span.Name)
+                    .Timestamp(this.ToEpochMicroseconds(span.StartTimestamp))
                     .Duration(endTimestamp - startTimestamp)
                     .LocalEndpoint(localEndpoint);
 
-            if (spanData.ParentSpanId != default)
+            if (span.ParentSpanId != default)
             {
-                spanBuilder.ParentId(this.EncodeSpanId(spanData.ParentSpanId));
+                spanBuilder.ParentId(this.EncodeSpanId(span.ParentSpanId));
             }
 
-            foreach (var label in spanData.Attributes.AttributeMap)
+            foreach (var label in span.Attributes)
             {
                 spanBuilder.PutTag(label.Key, label.Value.ToString());
             }
 
-            var status = spanData.Status;
+            var status = span.Status;
 
             if (status.IsValid)
             {
@@ -131,9 +131,9 @@ namespace OpenTelemetry.Exporter.Zipkin.Implementation
                 }
             }
 
-            foreach (var annotation in spanData.Events.Events)
+            foreach (var annotation in span.Events)
             {
-                spanBuilder.AddAnnotation(this.ToEpochMicroseconds(annotation.Timestamp), annotation.Event.Name);
+                spanBuilder.AddAnnotation(this.ToEpochMicroseconds(annotation.Timestamp), annotation.Name);
             }
 
             return spanBuilder.Build();
@@ -161,13 +161,13 @@ namespace OpenTelemetry.Exporter.Zipkin.Implementation
             return spanId.ToHexString();
         }
 
-        private ZipkinSpanKind ToSpanKind(SpanData spanData)
+        private ZipkinSpanKind ToSpanKind(Span span)
         {
-            if (spanData.Kind == SpanKind.Server)
+            if (span.Kind == SpanKind.Server)
             {
                 return ZipkinSpanKind.SERVER;
             }
-            else if (spanData.Kind == SpanKind.Client)
+            else if (span.Kind == SpanKind.Client)
             {
                 return ZipkinSpanKind.CLIENT;
             }

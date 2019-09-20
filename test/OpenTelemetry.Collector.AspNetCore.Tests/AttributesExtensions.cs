@@ -14,6 +14,8 @@
 // limitations under the License.
 // </copyright>
 
+using System.Collections.Generic;
+
 namespace OpenTelemetry.Collector.AspNetCore.Tests
 {
     using System.Linq;
@@ -21,9 +23,9 @@ namespace OpenTelemetry.Collector.AspNetCore.Tests
 
     internal static class AttributesExtensions
     {
-        public static object GetValue(this Attributes attributes, string key)
+        public static object GetValue(this IEnumerable<KeyValuePair<string, object>> attributes, string key)
         {
-            return attributes.AttributeMap.FirstOrDefault(kvp => kvp.Key == key).Value;
+            return attributes.FirstOrDefault(kvp => kvp.Key == key).Value;
         }
     }
 }

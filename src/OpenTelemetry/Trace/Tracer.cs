@@ -77,12 +77,6 @@ namespace OpenTelemetry.Trace
         public ITextFormat TextFormat { get; }
 
         /// <inheritdoc/>
-        public void RecordSpanData(SpanData span)
-        {
-            this.spanExporter.ExportAsync(span, CancellationToken.None);
-        }
-
-        /// <inheritdoc/>
         public ISpanBuilder SpanBuilder(string spanName)
         {
             return new SpanBuilder(spanName, this.spanBuilderOptions);

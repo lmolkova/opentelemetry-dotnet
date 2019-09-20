@@ -1,4 +1,4 @@
-﻿// <copyright file="IStartEndHandler.cs" company="OpenTelemetry Authors">
+﻿// <copyright file="ITraceParams.cs" company="OpenTelemetry Authors">
 // Copyright 2018, OpenTelemetry Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,23 +14,22 @@
 // limitations under the License.
 // </copyright>
 
-namespace OpenTelemetry.Trace
+namespace OpenTelemetry.Trace.Config
 {
     /// <summary>
-    /// Start event handler.
+    /// Trace parameters that can be updates in runtime.
     /// </summary>
-    public interface IStartEndHandler
+    public interface ITraceParams
     {
         /// <summary>
-        /// Called when span is being started.
+        /// Gets the sampler.
         /// </summary>
-        /// <param name="span">Span that just started.</param>
-        void OnStart(ISpan span);
+        ISampler Sampler { get; }
 
         /// <summary>
-        /// Called when span is just ended.
+        /// Creates params builder preinitialized with the trace parameters supplied.
         /// </summary>
-        /// <param name="span">Span that was just ended.</param>
-        void OnEnd(ISpan span);
+        /// <returns>Trace parameters builder.</returns>
+        TraceParamsBuilder ToBuilder();
     }
 }

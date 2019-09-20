@@ -31,10 +31,10 @@ namespace OpenTelemetry.Trace.Export
             }
         }
 
-        public abstract void AddSpan(ISpan span);
+        public abstract void AddSpan(Span span);
 
         /// <inheritdoc/>
-        public abstract Task ExportAsync(SpanData export, CancellationToken token);
+        public abstract Task ExportAsync(Span export, CancellationToken token);
 
         public abstract void Dispose();
 

@@ -1,4 +1,4 @@
-﻿// <copyright file="NoopSpanExporter.cs" company="OpenTelemetry Authors">
+﻿// <copyright file="IHandler.cs" company="OpenTelemetry Authors">
 // Copyright 2018, OpenTelemetry Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,30 +16,19 @@
 
 namespace OpenTelemetry.Trace.Export
 {
-    using System.Threading;
+    using System.Collections.Generic;
     using System.Threading.Tasks;
 
-    internal sealed class NoopSpanExporter : ISpanExporter
+    /// <summary>
+    /// Exporter handler.
+    /// </summary>
+    public interface IHandler
     {
-        public void AddSpan(Span span)
-        {
-        }
-
-        public Task ExportAsync(Span export, CancellationToken token)
-        {
-            return Task.CompletedTask;
-        }
-
-        public void Dispose()
-        {
-        }
-
-        public void RegisterHandler(string name, IHandler handler)
-        {
-        }
-
-        public void UnregisterHandler(string name)
-        {
-        }
+        /// <summary>
+        /// Exports the list of spans to the backend.
+        /// </summary>
+        /// <param name="spanDataList">Collection of spans to export.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous export operation.</returns>
+        Task ExportAsync(IEnumerable<Span> spanDataList);
     }
 }

@@ -14,6 +14,8 @@
 // limitations under the License.
 // </copyright>
 
+using System;
+
 namespace OpenTelemetry.Trace
 {
     using System.Collections.Generic;
@@ -117,5 +119,11 @@ namespace OpenTelemetry.Trace
         /// End the span.
         /// </summary>
         void End();
+
+        /// <summary>
+        /// End the span.
+        /// </summary>
+        /// <param name="endTimestamp">End timestamp of the span.</param>
+        void End(DateTime endTimestamp);
     }
 }

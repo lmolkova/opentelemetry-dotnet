@@ -40,6 +40,12 @@ namespace OpenTelemetry.Trace
         }
 
         /// <inheritdoc/>
+        public ISpanBuilder SetStartTimestamp(DateTime startTimestamp)
+        {
+            return this;
+        }
+
+        /// <inheritdoc/>
         public ISpan StartSpan()
         {
             return BlankSpan.Instance;

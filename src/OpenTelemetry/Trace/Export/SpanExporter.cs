@@ -51,13 +51,13 @@ namespace OpenTelemetry.Trace.Export
             return new SpanExporter(worker);
         }
 
-        public override void AddSpan(ISpan span)
+        public override void AddSpan(Span span)
         {
             this.worker.AddSpan(span);
         }
 
         /// <inheritdoc/>
-        public override Task ExportAsync(SpanData export, CancellationToken token)
+        public override Task ExportAsync(Span export, CancellationToken token)
         {
             return this.worker.ExportAsync(export, token);
         }

@@ -16,14 +16,14 @@
 
 namespace OpenTelemetry.Collector.StackExchangeRedis.Tests
 {
+    using System.Collections.Generic;
     using System.Linq;
-    using OpenTelemetry.Trace.Export;
 
     internal static class AttributesExtensions
     {
-        public static object GetValue(this Attributes attributes, string key)
+        public static object GetValue(this IEnumerable<KeyValuePair<string, object>> attributes, string key)
         {
-            return attributes.AttributeMap.FirstOrDefault(kvp => kvp.Key == key).Value;
+            return attributes.FirstOrDefault(kvp => kvp.Key == key).Value;
         }
     }
 }

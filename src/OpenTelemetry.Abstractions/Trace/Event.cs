@@ -20,6 +20,7 @@ namespace OpenTelemetry.Trace
     using System.Collections.Generic;
     using System.Collections.ObjectModel;
     using System.Linq;
+    using OpenTelemetry.Abstractions.Utils;
 
     /// <inheritdoc/>
     public sealed class Event : IEvent
@@ -27,14 +28,18 @@ namespace OpenTelemetry.Trace
         private static readonly ReadOnlyDictionary<string, object> EmptyAttributes =
                 new ReadOnlyDictionary<string, object>(new Dictionary<string, object>());
 
-        internal Event(string name, IDictionary<string, object> attributes)
+        internal Event(string name, DateTime timestamp, IDictionary<string, object> attributes)
         {
-            this.Name = name ?? throw new ArgumentNullException("Null event name");
-            this.Attributes = attributes ?? throw new ArgumentNullException("Null attributes");
+            this.Name = name ?? throw new ArgumentNullException(nameof(name));
+            this.Attributes = attributes ?? throw new ArgumentNullException(nameof(attributes));
+            this.Timestamp = timestamp != default ? timestamp : PreciseTimestamp.GetUtcNow();
         }
 
         /// <inheritdoc/>
         public string Name { get; }
+
+        /// <inheritdoc/>
+        public DateTime Timestamp { get; }
 
         /// <inheritdoc/>
         public IDictionary<string, object> Attributes { get; }
@@ -47,7 +52,18 @@ namespace OpenTelemetry.Trace
         /// <exception cref="ArgumentNullException">If <c>name</c> is <c>null</c>.</exception>
         public static IEvent Create(string name)
         {
-            return new Event(name, EmptyAttributes);
+            return new Event(name, default, EmptyAttributes);
+        }
+
+        /// <summary>
+        /// Returns a new <see cref="Event"/> with the provided name.
+        /// </summary>
+        /// <param name="name">The text name for the <see cref="Event"/>.</param>
+        /// <returns>A new <see cref="Event"/> with the provided name.</returns>
+        /// <exception cref="ArgumentNullException">If <c>name</c> is <c>null</c>.</exception>
+        public static IEvent Create(string name, DateTime timestamp)
+        {
+            return new Event(name, timestamp, EmptyAttributes);
         }
 
         /// <summary>
@@ -57,7 +73,7 @@ namespace OpenTelemetry.Trace
         /// <param name="attributes">The <see cref="IDictionary{String, IAttributeValue}"/> of attributes for the <see cref="Event"/>.</param>
         /// <returns>A new <see cref="Event"/> with the provided name and set of attributes.</returns>
         /// <exception cref="ArgumentNullException">If <c>name</c> or <c>attributes</c> is <c>null</c>.</exception>
-        public static IEvent Create(string name, IDictionary<string, object> attributes)
+        public static IEvent Create(string name, DateTime timestamp, IDictionary<string, object> attributes)
         {
             if (attributes == null)
             {
@@ -65,7 +81,7 @@ namespace OpenTelemetry.Trace
             }
 
             IDictionary<string, object> readOnly = new ReadOnlyDictionary<string, object>(attributes);
-            return new Event(name, readOnly);
+            return new Event(name, timestamp, readOnly);
         }
 
         /// <inheritdoc/>

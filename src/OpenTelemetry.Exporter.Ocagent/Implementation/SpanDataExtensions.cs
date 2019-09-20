@@ -29,7 +29,7 @@ namespace OpenTelemetry.Exporter.Ocagent.Implementation
 
     internal static class SpanDataExtensions
     {
-        internal static Span ToProtoSpan(this SpanData spanData)
+        internal static Proto.Trace.V1.Span ToProtoSpan(this Trace.Span otSpan)
         {
             try
             {
@@ -37,45 +37,45 @@ namespace OpenTelemetry.Exporter.Ocagent.Implementation
                 Span<byte> traceIdBytes = stackalloc byte[16];
                 Span<byte> spanIdBytes = stackalloc byte[8];
 
-                spanData.Context.TraceId.CopyTo(traceIdBytes);
-                spanData.Context.SpanId.CopyTo(spanIdBytes);
+                otSpan.Context.TraceId.CopyTo(traceIdBytes);
+                otSpan.Context.SpanId.CopyTo(spanIdBytes);
 
                 var parentSpanIdString = ByteString.Empty;
-                if (spanData.ParentSpanId != default)
+                if (otSpan.ParentSpanId != default)
                 {
                     Span<byte> parentSpanIdBytes = stackalloc byte[8];
-                    spanData.ParentSpanId.CopyTo(parentSpanIdBytes);
+                    otSpan.ParentSpanId.CopyTo(parentSpanIdBytes);
                     parentSpanIdString = ByteString.CopyFrom(parentSpanIdBytes.ToArray());
                 }
 
-                return new Span
+                return new Proto.Trace.V1.Span
                 {
-                    Name = new TruncatableString { Value = spanData.Name },
+                    Name = new TruncatableString { Value = otSpan.Name },
 
                     // TODO: Utilize new Span.Types.SpanKind below when updated protos are incorporated, also confirm default for SpanKind.Internal
-                    Kind = spanData.Kind == SpanKind.Client || spanData.Kind == SpanKind.Producer ? Span.Types.SpanKind.Client : Span.Types.SpanKind.Server,
+                    Kind = otSpan.Kind == SpanKind.Client || otSpan.Kind == SpanKind.Producer ? Proto.Trace.V1.Span.Types.SpanKind.Client : Proto.Trace.V1.Span.Types.SpanKind.Server,
 
                     TraceId = ByteString.CopyFrom(traceIdBytes.ToArray()),
                     SpanId = ByteString.CopyFrom(spanIdBytes.ToArray()),
                     ParentSpanId = parentSpanIdString,
 
-                    StartTime = spanData.StartTimestamp.ToTimestamp(),
-                    EndTime = spanData.EndTimestamp.ToTimestamp(),
-                    Status = !spanData.Status.IsValid
+                    StartTime = otSpan.StartTimestamp.ToTimestamp(),
+                    EndTime = otSpan.EndTimestamp.ToTimestamp(),
+                    Status = !otSpan.Status.IsValid
                         ? null
                         : new OpenTelemetry.Proto.Trace.V1.Status
                         {
-                            Code = (int)spanData.Status.CanonicalCode,
-                            Message = spanData.Status.Description ?? string.Empty,
+                            Code = (int)otSpan.Status.CanonicalCode,
+                            Message = otSpan.Status.Description ?? string.Empty,
                         },
-                    SameProcessAsParentSpan = spanData.ParentSpanId != default,
-                    ChildSpanCount = spanData.ChildSpanCount.HasValue ? (uint)spanData.ChildSpanCount.Value : 0,
-                    Attributes = FromAttributes(spanData.Attributes),
-                    TimeEvents = FromITimeEvents(spanData.Events),
-                    Links = new Span.Types.Links
+                    SameProcessAsParentSpan = otSpan.ParentSpanId != default,
+                    ChildSpanCount = null,
+                    Attributes = FromAttributes(otSpan.Attributes),
+                    TimeEvents = FromTimeEvents(otSpan.Events),
+                    Links = new Proto.Trace.V1.Span.Types.Links
                     {
-                        DroppedLinksCount = spanData.Links.DroppedLinksCount,
-                        Link = { spanData.Links.Links.Select(FromILink), },
+                        DroppedLinksCount = 0,
+                        Link = { otSpan.Links.Select(FromILink), },
                     },
                 };
             }
@@ -91,14 +91,14 @@ namespace OpenTelemetry.Exporter.Ocagent.Implementation
             return null;
         }
 
-        private static Span.Types.Attributes FromAttributes(Attributes source)
+        private static Proto.Trace.V1.Span.Types.Attributes FromAttributes(IEnumerable<KeyValuePair<string, object>> source)
         {
-            var attributes = new Span.Types.Attributes
+            var attributes = new Proto.Trace.V1.Span.Types.Attributes
             {
-                DroppedAttributesCount = source.DroppedAttributesCount,
+                DroppedAttributesCount = 0,
             };
 
-            attributes.AttributeMap.Add(source.AttributeMap.ToDictionary(
+            attributes.AttributeMap.Add(source.ToDictionary(
                 kvp => kvp.Key,
                 kvp => FromAttribute(kvp.Value)));
 
@@ -125,20 +125,22 @@ namespace OpenTelemetry.Exporter.Ocagent.Implementation
             }
         }
 
-        private static Span.Types.TimeEvents FromITimeEvents(ITimedEvents<IEvent> events)
+        private static Proto.Trace.V1.Span.Types.TimeEvents FromTimeEvents(IEnumerable<IEvent> events)
         {
-            var timedEvents = new Span.Types.TimeEvents
+            var enumerable = events as IEvent[] ?? events.ToArray();
+
+            var timedEvents = new Proto.Trace.V1.Span.Types.TimeEvents
             {
-                DroppedAnnotationsCount = events.DroppedEventsCount,
-                TimeEvent = { events.Events.Select(FromITimeEvent), },
+                DroppedAnnotationsCount = 0,
+                TimeEvent = { enumerable.Select(FromTimeEvent), },
             };
 
-            timedEvents.TimeEvent.AddRange(events.Events.Select(FromITimeEvent));
+            timedEvents.TimeEvent.AddRange(enumerable.Select(FromTimeEvent));
 
             return timedEvents;
         }
 
-        private static Span.Types.Link FromILink(ILink source)
+        private static Proto.Trace.V1.Span.Types.Link FromILink(ILink source)
         {
             // protobuf doesn't understand Span<T> yet: https://github.com/protocolbuffers/protobuf/issues/3431
             Span<byte> traceIdBytes = stackalloc byte[16];
@@ -147,7 +149,7 @@ namespace OpenTelemetry.Exporter.Ocagent.Implementation
             source.Context.TraceId.CopyTo(traceIdBytes);
             source.Context.SpanId.CopyTo(spanIdBytes);
 
-            var result = new Span.Types.Link
+            var result = new Proto.Trace.V1.Span.Types.Link
             {
                 Attributes = FromIAttributeMap(source.Attributes),
                 TraceId = ByteString.CopyFrom(traceIdBytes.ToArray()),
@@ -157,22 +159,22 @@ namespace OpenTelemetry.Exporter.Ocagent.Implementation
             return result;
         }
 
-        private static Span.Types.TimeEvent FromITimeEvent(ITimedEvent<IEvent> source)
+        private static Proto.Trace.V1.Span.Types.TimeEvent FromTimeEvent(IEvent source)
         {
-            return new Span.Types.TimeEvent
+            return new Proto.Trace.V1.Span.Types.TimeEvent
             {
                 Time = source.Timestamp.ToTimestamp(),
-                Annotation = new Span.Types.TimeEvent.Types.Annotation
+                Annotation = new Proto.Trace.V1.Span.Types.TimeEvent.Types.Annotation
                 {
-                    Description = new TruncatableString { Value = source.Event.Name },
-                    Attributes = FromIAttributeMap(source.Event.Attributes),
+                    Description = new TruncatableString { Value = source.Name },
+                    Attributes = FromIAttributeMap(source.Attributes),
                 },
             };
         }
 
-        private static Span.Types.Attributes FromIAttributeMap(IDictionary<string, object> source)
+        private static Proto.Trace.V1.Span.Types.Attributes FromIAttributeMap(IEnumerable<KeyValuePair<string, object>> source)
         {
-            var attributes = new Span.Types.Attributes();
+            var attributes = new Proto.Trace.V1.Span.Types.Attributes();
 
             attributes.AttributeMap.Add(source.ToDictionary(
                 kvp => kvp.Key,

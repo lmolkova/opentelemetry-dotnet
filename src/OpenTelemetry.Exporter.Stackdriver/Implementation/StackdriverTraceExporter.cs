@@ -72,14 +72,14 @@ namespace OpenTelemetry.Exporter.Stackdriver.Implementation
             this.traceServiceSettings.CallSettings = callSettings;
         }
 
-        public async Task ExportAsync(IEnumerable<SpanData> spanDataList)
+        public async Task ExportAsync(IEnumerable<Trace.Span> spanList)
         {
             var traceWriter = TraceServiceClient.Create(settings: this.traceServiceSettings);
             
             var batchSpansRequest = new BatchWriteSpansRequest
             {
                 ProjectName = this.googleCloudProjectId,
-                Spans = { spanDataList.Select(s => s.ToSpan(this.googleCloudProjectId.ProjectId)) },
+                Spans = { spanList.Select(s => s.ToSpan(this.googleCloudProjectId.ProjectId)) },
             };
             
             await traceWriter.BatchWriteSpansAsync(batchSpansRequest);

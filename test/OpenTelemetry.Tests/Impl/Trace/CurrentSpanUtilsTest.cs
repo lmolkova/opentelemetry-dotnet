@@ -62,8 +62,8 @@ namespace OpenTelemetry.Trace.Test
                 activity,
                 Tracestate.Empty,
                 SpanKind.Internal,
-                TraceParams.Default,
-                startEndHandler);
+                startEndHandler,
+                default);
 
             Assert.Same(BlankSpan.Instance, CurrentSpanUtils.CurrentSpan);
             using (CurrentSpanUtils.WithSpan(span, stopSpan))
@@ -94,8 +94,8 @@ namespace OpenTelemetry.Trace.Test
                 activity,
                 Tracestate.Empty,
                 SpanKind.Internal,
-                TraceParams.Default,
                 startEndHandler,
+                default,
                 false);
 
             Assert.Same(BlankSpan.Instance, CurrentSpanUtils.CurrentSpan);
@@ -126,8 +126,8 @@ namespace OpenTelemetry.Trace.Test
                 parentActivity,
                 Tracestate.Empty,
                 SpanKind.Internal,
-                TraceParams.Default,
-                startEndHandler);
+                startEndHandler,
+                default);
             var parentScope = CurrentSpanUtils.WithSpan(parentSpan, stopSpan);
 
             var childActivity = new Activity("child").Start();
@@ -135,8 +135,8 @@ namespace OpenTelemetry.Trace.Test
                 childActivity,
                 Tracestate.Empty,
                 SpanKind.Internal,
-                TraceParams.Default,
-                startEndHandler);
+                startEndHandler,
+                default);
 
             Assert.Same(BlankSpan.Instance, CurrentSpanUtils.CurrentSpan);
 
@@ -167,8 +167,8 @@ namespace OpenTelemetry.Trace.Test
                 parentActivity,
                 Tracestate.Empty,
                 SpanKind.Internal,
-                TraceParams.Default,
-                startEndHandler);
+                startEndHandler,
+                default);
 
             var parentScope = CurrentSpanUtils.WithSpan(parentSpan, stopSpan);
 
@@ -177,8 +177,8 @@ namespace OpenTelemetry.Trace.Test
                 childActivity,
                 Tracestate.Empty,
                 SpanKind.Internal,
-                TraceParams.Default,
-                startEndHandler);
+                startEndHandler,
+                default);
 
             Assert.Same(BlankSpan.Instance, CurrentSpanUtils.CurrentSpan);
 
@@ -201,8 +201,8 @@ namespace OpenTelemetry.Trace.Test
                 activity,
                 Tracestate.Empty,
                 SpanKind.Internal,
-                TraceParams.Default,
-                startEndHandler);
+                startEndHandler,
+                default);
 
             using(CurrentSpanUtils.WithSpan(span, true))
             using(CurrentSpanUtils.WithSpan(span, true))
@@ -223,8 +223,8 @@ namespace OpenTelemetry.Trace.Test
                 activity,
                 Tracestate.Empty,
                 SpanKind.Internal,
-                TraceParams.Default,
-                startEndHandler);
+                startEndHandler,
+                default);
 
             activity.Stop();
 
@@ -255,8 +255,8 @@ namespace OpenTelemetry.Trace.Test
                 activity,
                 Tracestate.Empty,
                 SpanKind.Internal,
-                TraceParams.Default,
-                startEndHandler);
+                startEndHandler,
+                default);
 
             Assert.Same(BlankSpan.Instance, CurrentSpanUtils.CurrentSpan);
             using (CurrentSpanUtils.WithSpan(span, stopSpan))

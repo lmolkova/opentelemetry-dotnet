@@ -24,29 +24,29 @@ namespace OpenTelemetry.Exporter.Stackdriver.Implementation
     internal static class SpanExtensions
     {
         /// <summary>
-        /// Translating <see cref="SpanData"/> to Stackdriver's Span
+        /// Translating <see cref="Trace.Span"/> to Stackdriver's Span
         /// According to <see href="https://cloud.google.com/trace/docs/reference/v2/rpc/google.devtools.cloudtrace.v2"/> specifications.
         /// </summary>
-        /// <param name="spanData">Span in OpenTelemetry format.</param>
+        /// <param name="otSpan">Span in OpenTelemetry format.</param>
         /// <param name="projectId">Google Cloud Platform Project Id.</param>
         /// <returns><see cref="ISpan"/>.</returns>
-        public static Google.Cloud.Trace.V2.Span ToSpan(this SpanData spanData, string projectId)
+        public static Google.Cloud.Trace.V2.Span ToSpan(this Trace.Span otSpan, string projectId)
         {
-            var spanId = spanData.Context.SpanId.ToHexString();
+            var spanId = otSpan.Context.SpanId.ToHexString();
 
             // Base span settings
             var span = new Google.Cloud.Trace.V2.Span
             {
-                SpanName = new SpanName(projectId, spanData.Context.TraceId.ToHexString(), spanId),
+                SpanName = new SpanName(projectId, otSpan.Context.TraceId.ToHexString(), spanId),
                 SpanId = spanId,
-                DisplayName = new TruncatableString { Value = spanData.Name },
-                StartTime = spanData.StartTimestamp.ToTimestamp(),
-                EndTime = spanData.EndTimestamp.ToTimestamp(),
-                ChildSpanCount = spanData.ChildSpanCount,
+                DisplayName = new TruncatableString { Value = otSpan.Name },
+                StartTime = otSpan.StartTimestamp.ToTimestamp(),
+                EndTime = otSpan.EndTimestamp.ToTimestamp(),
+                ChildSpanCount = null,
             };
-            if (spanData.ParentSpanId != null)
+            if (otSpan.ParentSpanId != default)
             {
-                var parentSpanId = spanData.ParentSpanId.ToHexString();
+                var parentSpanId = otSpan.ParentSpanId.ToHexString();
                 if (!string.IsNullOrEmpty(parentSpanId))
                 {
                     span.ParentSpanId = parentSpanId;
@@ -54,25 +54,25 @@ namespace OpenTelemetry.Exporter.Stackdriver.Implementation
             }
 
             // Span Links
-            if (spanData.Links != null)
+            if (otSpan.Links != null)
             {
                 span.Links = new Google.Cloud.Trace.V2.Span.Types.Links
                 {
-                    DroppedLinksCount = spanData.Links.DroppedLinksCount,
-                    Link = { spanData.Links.Links.Select(l => l.ToLink()) },
+                    DroppedLinksCount = 0,
+                    Link = { otSpan.Links.Select(l => l.ToLink()) },
                 };
             }
 
             // Span Attributes
-            if (spanData.Attributes != null)
+            if (otSpan.Attributes != null)
             {
                 span.Attributes = new Google.Cloud.Trace.V2.Span.Types.Attributes
                 {
-                    DroppedAttributesCount = spanData.Attributes != null ? spanData.Attributes.DroppedAttributesCount : 0,
+                    DroppedAttributesCount = 0,
 
                     AttributeMap =
                     {
-                        spanData.Attributes?.AttributeMap?.ToDictionary(
+                        otSpan.Attributes?.ToDictionary(
                                         s => s.Key,
                                         s => s.Value?.ToAttributeValue()),
                     },
@@ -92,7 +92,7 @@ namespace OpenTelemetry.Exporter.Stackdriver.Implementation
             {
                 ret.Attributes = new Google.Cloud.Trace.V2.Span.Types.Attributes
                 {
-                    DroppedAttributesCount = OpenTelemetry.Trace.Config.TraceParams.Default.MaxNumberOfAttributes - link.Attributes.Count,
+                    DroppedAttributesCount = 0,
 
                     AttributeMap =
                     {
