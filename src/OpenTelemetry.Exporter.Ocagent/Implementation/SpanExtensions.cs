@@ -1,4 +1,4 @@
-﻿// <copyright file="otelSpanExtensions.cs" company="OpenTelemetry Authors">
+﻿// <copyright file="SpanExtensions.cs" company="OpenTelemetry Authors">
 // Copyright 2018, OpenTelemetry Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,9 +25,8 @@ namespace OpenTelemetry.Exporter.Ocagent.Implementation
 
     using OpenTelemetry.Proto.Trace.V1;
     using OpenTelemetry.Trace;
-    using OpenTelemetry.Trace.Export;
 
-    internal static class otelSpanExtensions
+    internal static class SpanExtensions
     {
         internal static Proto.Trace.V1.Span ToProtoSpan(this Trace.Span otelSpan)
         {

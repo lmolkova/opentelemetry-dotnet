@@ -1,7 +1,7 @@
 <Project>
   <ItemGroup>
-    <!--PackageReference Include="StyleCop.Analyzers" Version="1.1.118" Condition="'$(SkipAnalysis)'!='true'">
+    <PackageReference Include="StyleCop.Analyzers" Version="1.1.118" Condition="'$(SkipAnalysis)'!='true'">
       <PrivateAssets>All</PrivateAssets>
-    </PackageReference-->
+    </PackageReference>
   </ItemGroup>
 </Project>

@@ -21,10 +21,7 @@ namespace OpenTelemetry.Trace.Export
 
     public abstract class SpanExporterBase : ISpanExporter
     {
-        public static ISpanExporter NoopSpanExporter
-        {
-            get;
-        } = new NoopSpanExporter();
+        public static ISpanExporter NoopSpanExporter { get; } = new NoopSpanExporter();
 
         public abstract void AddSpan(Span span);
 
