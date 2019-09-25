@@ -32,7 +32,7 @@ namespace OpenTelemetry.Trace.Export.Test
 
         private TestExporter spanExporter;
         private SpanProcessor spanProcessor;
-
+        
         public SimpleSpanProcessorTest()
         {
             spanExporter = new TestExporter(null);
@@ -51,7 +51,7 @@ namespace OpenTelemetry.Trace.Export.Test
                     Tracestate.Empty,
                     SpanKind.Internal,
                     TraceConfig.Default,
-                    spanProcessor,
+                    new MultiSpanProcessor(new[] { spanProcessor }),
                     PreciseTimestamp.GetUtcNow(),
                     default);
             span.End();
@@ -69,7 +69,7 @@ namespace OpenTelemetry.Trace.Export.Test
                     Tracestate.Empty,
                     SpanKind.Internal,
                     TraceConfig.Default,
-                    spanProcessor,
+                    new MultiSpanProcessor(new[] { spanProcessor }),
                     PreciseTimestamp.GetUtcNow(),
                     false);
             span.End();
@@ -98,7 +98,7 @@ namespace OpenTelemetry.Trace.Export.Test
                     Tracestate.Empty,
                     SpanKind.Internal,
                     TraceConfig.Default,
-                    spanProcessor,
+                    new MultiSpanProcessor(new[] { spanProcessor }),
                     PreciseTimestamp.GetUtcNow(),
                     default);
 
@@ -123,7 +123,7 @@ namespace OpenTelemetry.Trace.Export.Test
                     Tracestate.Empty,
                     SpanKind.Internal,
                     TraceConfig.Default,
-                    spanProcessor,
+                    new MultiSpanProcessor(new[] { spanProcessor }),
                     PreciseTimestamp.GetUtcNow(),
                     default);
 

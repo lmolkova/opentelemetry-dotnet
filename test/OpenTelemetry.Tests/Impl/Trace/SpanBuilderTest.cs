@@ -33,12 +33,14 @@ namespace OpenTelemetry.Trace.Test
 
         private readonly TraceConfig alwaysSampleTraceConfig = new TraceConfig(Samplers.AlwaysSample);
 
-        private readonly SpanProcessor spanProcessor = new SimpleSpanProcessor(new NoopSpanExporter());
-
+        private readonly SpanProcessor[] spanProcessors = { new SimpleSpanProcessor(new NoopSpanExporter())};
+        private readonly MultiSpanProcessor spanProcessor;
         private readonly ITracer tracer;
         public SpanBuilderTest()
         {
-            tracer = new Tracer(spanProcessor, alwaysSampleTraceConfig);
+            spanProcessor = new MultiSpanProcessor(spanProcessors);
+            
+            tracer = new Tracer(spanProcessors, alwaysSampleTraceConfig);
         }
 
         [Fact]

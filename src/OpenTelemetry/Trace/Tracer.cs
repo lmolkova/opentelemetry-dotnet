@@ -17,17 +17,19 @@
 namespace OpenTelemetry.Trace
 {
     using System;
+    using System.Collections.Generic;
     using System.Diagnostics;
+    using System.Threading;
     using OpenTelemetry.Context;
     using OpenTelemetry.Context.Propagation;
     using OpenTelemetry.Trace.Config;
     using OpenTelemetry.Trace.Export;
     using OpenTelemetry.Trace.Internal;
 
-    /// <inheritdoc/>
-    public sealed class Tracer : ITracer
+    /// <inheritdoc cref="ITracer"/>
+    public sealed class Tracer : ITracer, IDisposable
     {
-        private readonly SpanProcessor spanProcessor;
+        private readonly MultiSpanProcessor multiSpanProcessor;
 
         static Tracer()
         {
@@ -38,11 +40,18 @@ namespace OpenTelemetry.Trace
         /// <summary>
         /// Creates an instance of <see cref="ITracer"/>.
         /// </summary>
-        /// <param name="spanProcessor">Span processor.</param>
+        /// <param name="spanProcessors">Span processors collection.</param>
         /// <param name="traceConfig">Trace configuration.</param>
-        public Tracer(SpanProcessor spanProcessor, TraceConfig traceConfig)
+        public Tracer(IEnumerable<SpanProcessor> spanProcessors, TraceConfig traceConfig)
         {
-            this.spanProcessor = spanProcessor ?? throw new ArgumentNullException(nameof(spanProcessor));
+            // we accept only collection of processors to make it DI friendly. 
+            // end-users in basic case are not expected to instantiate Tracer - it will be done by global default tracer
+            if (spanProcessors == null)
+            {
+                throw new ArgumentNullException(nameof(spanProcessors));
+            }
+
+            this.multiSpanProcessor = new MultiSpanProcessor(spanProcessors);
             this.ActiveTraceConfig = traceConfig ?? throw new ArgumentNullException(nameof(traceConfig));
             this.BinaryFormat = new BinaryFormat();
             this.TextFormat = new TraceContextFormat();
@@ -51,13 +60,20 @@ namespace OpenTelemetry.Trace
         /// <summary>
         /// Creates an instance of <see cref="Tracer"/>.
         /// </summary>
-        /// <param name="spanProcessor">Span processor.</param>
+        /// <param name="spanProcessors">Span processor collection.</param>
         /// <param name="traceConfig">Trace configuration.</param>
         /// <param name="binaryFormat">Binary format context propagator.</param>
         /// <param name="textFormat">Text format context propagator.</param>
-        public Tracer(SpanProcessor spanProcessor, TraceConfig traceConfig, IBinaryFormat binaryFormat, ITextFormat textFormat)
+        public Tracer(IEnumerable<SpanProcessor> spanProcessors, TraceConfig traceConfig, IBinaryFormat binaryFormat, ITextFormat textFormat)
         {
-            this.spanProcessor = spanProcessor ?? throw new ArgumentNullException(nameof(spanProcessor));
+            // we accept only collection of processors to make it DI friendly. 
+            // end-users in basic case are not expected to instantiate Tracer - it will be done by global default tracer
+            if (spanProcessors == null)
+            {
+                throw new ArgumentNullException(nameof(spanProcessors));
+            }
+
+            this.multiSpanProcessor = new MultiSpanProcessor(spanProcessors);
             this.ActiveTraceConfig = traceConfig ?? throw new ArgumentNullException(nameof(traceConfig));
             this.BinaryFormat = binaryFormat ?? throw new ArgumentNullException(nameof(binaryFormat));
             this.TextFormat = textFormat ?? throw new ArgumentNullException(nameof(textFormat));
@@ -77,7 +93,7 @@ namespace OpenTelemetry.Trace
         /// <inheritdoc/>
         public ISpanBuilder SpanBuilder(string spanName)
         {
-            return new SpanBuilder(spanName, this.spanProcessor, this.ActiveTraceConfig);
+            return new SpanBuilder(spanName, this.multiSpanProcessor, this.ActiveTraceConfig);
         }
 
         public IScope WithSpan(ISpan span)
@@ -88,6 +104,11 @@ namespace OpenTelemetry.Trace
             }
 
             return CurrentSpanUtils.WithSpan(span, true);
+        }
+
+        public void Dispose()
+        {
+            this.multiSpanProcessor.ShutdownAsync(CancellationToken.None).GetAwaiter().GetResult();
         }
     }
 }

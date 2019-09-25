@@ -27,6 +27,7 @@ namespace OpenTelemetry.Collector.AspNetCore.Tests
     using Moq;
     using Microsoft.AspNetCore.TestHost;
     using System;
+    using System.Threading;
     using OpenTelemetry.Context.Propagation;
     using Microsoft.AspNetCore.Http;
     using System.Collections.Generic;
@@ -46,8 +47,8 @@ namespace OpenTelemetry.Collector.AspNetCore.Tests
         [Fact]
         public async Task SuccessfulTemplateControllerCallGeneratesASpan()
         {
-            var panProcessor = new Mock<SpanProcessor>(new NoopSpanExporter());
-            var tracer = new Tracer(panProcessor.Object, TraceConfig.Default);
+            var spanProcessor = new Mock<SpanProcessor>(new NoopSpanExporter());
+            var tracer = new Tracer(new[] { spanProcessor.Object }, TraceConfig.Default);
 
             void ConfigureTestServices(IServiceCollection services) =>
                 services.AddSingleton<ITracer>(tracer);
@@ -67,7 +68,7 @@ namespace OpenTelemetry.Collector.AspNetCore.Tests
 
                 for (var i = 0; i < 10; i++)
                 {
-                    if (panProcessor.Invocations.Count == 2)
+                    if (spanProcessor.Invocations.Count == 2)
                     {
                         break;
                     }
@@ -80,8 +81,8 @@ namespace OpenTelemetry.Collector.AspNetCore.Tests
             }
 
 
-            Assert.Equal(2, panProcessor.Invocations.Count); // begin and end was called
-            var span = ((Span)panProcessor.Invocations[1].Arguments[0]);
+            Assert.Equal(2, spanProcessor.Invocations.Count); // begin and end was called
+            var span = ((Span)spanProcessor.Invocations[1].Arguments[0]);
 
             Assert.Equal(SpanKind.Server, span.Kind);
             Assert.Equal("/api/values", span.Attributes.GetValue("http.path"));
@@ -103,20 +104,18 @@ namespace OpenTelemetry.Collector.AspNetCore.Tests
                 Tracestate.Empty
                 ));
 
-            var tracer = new Tracer(spanProcessor.Object, TraceConfig.Default, new BinaryFormat(), tf.Object);
-
             // Arrange
             using (var client = this.factory
                 .WithWebHostBuilder(builder =>
                     builder.ConfigureTestServices((services) =>
                     {
-                        services.AddSingleton<ITracer>(tracer);
                         services.AddSingleton<ITextFormat>(tf.Object);
-                        services.AddSingleton<IBinaryFormat>(new BinaryFormat());
+                        services.AddSingleton<IBinaryFormat, BinaryFormat>();
+                        services.AddSingleton<SpanProcessor>(spanProcessor.Object);
+                        services.AddSingleton<ITracer, Tracer>();
                     }))
                 .CreateClient())
             {
-
                 // Act
                 var response = await client.GetAsync("/api/values/2");
 
@@ -146,6 +145,50 @@ namespace OpenTelemetry.Collector.AspNetCore.Tests
 
             Assert.Equal(expectedTraceId, span.Context.TraceId);
             Assert.Equal(expectedSpanId, span.ParentSpanId);
+        }
+
+        [Fact]
+        public async Task SpanMultiProcessor()
+        {
+            var spanProcessor1 = new Mock<SpanProcessor>(new NoopSpanExporter());
+            var spanProcessor2 = new Mock<SpanProcessor>(new NoopSpanExporter());
+
+            // Arrange
+            using (var client = this.factory
+                .WithWebHostBuilder(builder =>
+                    builder.ConfigureTestServices((IServiceCollection services) =>
+                    {
+                        services.AddSingleton<CallbackMiddleware.CallbackMiddlewareImpl>(new IncomingRequestsCollectionsIsAccordingToTheSpecTests.TestCallbackMiddlewareImpl());
+                        services.AddSingleton<TraceConfig>(TraceConfig.Default);
+                        services.AddSingleton<SpanProcessor>(spanProcessor1.Object);
+                        services.AddSingleton<SpanProcessor>(spanProcessor2.Object);
+                        services.AddSingleton<ITracer, Tracer>();
+                    }))
+                .CreateClient())
+            {
+
+                try
+                {
+                    // Act
+                    var response = await client.GetAsync("/api/values");
+                }
+                catch (Exception)
+                {
+                    // ignore errors
+                }
+
+                Assert.True(SpinWait.SpinUntil(() => spanProcessor1.Invocations.Count == 2, TimeSpan.FromSeconds(1)));
+            }
+
+            Assert.Equal(2, spanProcessor1.Invocations.Count); // begin and end was called
+            Assert.Equal(2, spanProcessor1.Invocations.Count); // begin and end was called
+            var span1 = ((Span)spanProcessor1.Invocations[1].Arguments[0]);
+            var span2 = ((Span)spanProcessor2.Invocations[1].Arguments[0]);
+
+            Assert.Same(span1, span2);
+            Assert.Equal(SpanKind.Server, span1.Kind);
+            Assert.Equal("/api/values", span1.Attributes.GetValue("http.path"));
+            Assert.Equal(503L, span1.Attributes.GetValue("http.status_code"));
         }
     }
 }

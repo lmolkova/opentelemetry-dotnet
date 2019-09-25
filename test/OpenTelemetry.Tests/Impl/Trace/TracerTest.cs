@@ -14,6 +14,8 @@
 // limitations under the License.
 // </copyright>
 
+using System.Threading;
+using Moq;
 using OpenTelemetry.Context.Propagation;
 
 namespace OpenTelemetry.Trace.Test
@@ -30,14 +32,14 @@ namespace OpenTelemetry.Trace.Test
         private const string SpanName = "MySpanName";
         private readonly SpanProcessor spanProcessor;
         private readonly TraceConfig traceConfig;
-        private readonly Tracer tracer;
+        private Tracer tracer;
 
 
         public TracerTest()
         {
             spanProcessor = new SimpleSpanProcessor(new NoopSpanExporter());
             traceConfig = TraceConfig.Default;
-            tracer = new Tracer(spanProcessor, traceConfig);
+            tracer = new Tracer(new []{ spanProcessor }, traceConfig);
         }
 
         [Fact]
@@ -54,11 +56,11 @@ namespace OpenTelemetry.Trace.Test
             Assert.Throws<ArgumentNullException>(() => new Tracer(null, TraceConfig.Default));
             Assert.Throws<ArgumentNullException>(() => new Tracer(null, TraceConfig.Default, new BinaryFormat(), new TraceContextFormat()));
 
-            Assert.Throws<ArgumentNullException>(() => new Tracer(noopProc, null));
-            Assert.Throws<ArgumentNullException>(() => new Tracer(noopProc, null, new BinaryFormat(), new TraceContextFormat()));
+            Assert.Throws<ArgumentNullException>(() => new Tracer(new[] { noopProc }, null));
+            Assert.Throws<ArgumentNullException>(() => new Tracer(new[] { noopProc }, null, new BinaryFormat(), new TraceContextFormat()));
 
-            Assert.Throws<ArgumentNullException>(() => new Tracer(noopProc, TraceConfig.Default, null, new TraceContextFormat()));
-            Assert.Throws<ArgumentNullException>(() => new Tracer(noopProc, TraceConfig.Default, new BinaryFormat(), null));
+            Assert.Throws<ArgumentNullException>(() => new Tracer(new[] { noopProc }, TraceConfig.Default, null, new TraceContextFormat()));
+            Assert.Throws<ArgumentNullException>(() => new Tracer(new[] { noopProc }, TraceConfig.Default, new BinaryFormat(), null));
 
         }
 
@@ -107,7 +109,7 @@ namespace OpenTelemetry.Trace.Test
         public void GetActiveConfig()
         {
             var config = new TraceConfig(Samplers.NeverSample);
-            var tracer = new Tracer(spanProcessor, config);
+            tracer = new Tracer(new [] { spanProcessor }, config);
             Assert.Equal(config, tracer.ActiveTraceConfig);
         }
 
@@ -117,6 +119,39 @@ namespace OpenTelemetry.Trace.Test
             var config = new TraceConfig(Samplers.NeverSample);
             tracer.ActiveTraceConfig = config;
             Assert.Equal(config, tracer.ActiveTraceConfig);
+        }
+
+        [Fact]
+        public void MultipleProcessors()
+        {
+            var processor1 = new Mock<SpanProcessor>(new NoopSpanExporter());
+            var processor2 = new Mock<SpanProcessor>(new NoopSpanExporter());
+
+            tracer = new Tracer(new[] { processor1.Object, processor2.Object }, TraceConfig.Default);
+            var span = tracer.SpanBuilder("foo").StartSpan();
+            span.End();
+
+            processor1.Verify((p) => p.OnStart(It.IsAny<Span>()), Times.Once);
+            processor1.Verify((p) => p.OnEnd(It.IsAny<Span>()), Times.Once);
+
+            processor2.Verify((p) => p.OnStart(It.IsAny<Span>()), Times.Once);
+            processor2.Verify((p) => p.OnEnd(It.IsAny<Span>()), Times.Once);
+        }
+
+        [Fact]
+        public void DisposeShutsDownProcessors()
+        {
+            var processor1 = new Mock<SpanProcessor>(new NoopSpanExporter());
+            var processor2 = new Mock<SpanProcessor>(new NoopSpanExporter());
+
+            tracer = new Tracer(new[] { processor1.Object, processor2.Object }, TraceConfig.Default);
+            var span = tracer.SpanBuilder("foo").StartSpan();
+            span.End();
+
+            tracer.Dispose();
+
+            processor1.Verify((p) => p.ShutdownAsync(It.Is<CancellationToken>(ct => ct == CancellationToken.None)), Times.Once);
+            processor2.Verify((p) => p.ShutdownAsync(It.Is<CancellationToken>(ct => ct == CancellationToken.None)), Times.Once);
         }
 
         // TODO test for sampler

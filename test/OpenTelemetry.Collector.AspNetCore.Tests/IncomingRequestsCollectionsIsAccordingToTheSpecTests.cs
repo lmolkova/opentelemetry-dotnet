@@ -22,8 +22,8 @@ namespace OpenTelemetry.Collector.AspNetCore.Tests
     using System.Threading.Tasks;
     using Microsoft.Extensions.DependencyInjection;
     using OpenTelemetry.Trace;
-    using OpenTelemetry.Trace.Config;
     using OpenTelemetry.Trace.Export;
+    using OpenTelemetry.Trace.Config;
     using Moq;
     using Microsoft.AspNetCore.TestHost;
     using System;
@@ -55,7 +55,6 @@ namespace OpenTelemetry.Collector.AspNetCore.Tests
         public async Task SuccessfulTemplateControllerCallGeneratesASpan()
         {
             var spanProcessor = new Mock<SpanProcessor>(new NoopSpanExporter());
-            var tracer = new Tracer(spanProcessor.Object, TraceConfig.Default);
 
             // Arrange
             using (var client = this.factory
@@ -63,7 +62,9 @@ namespace OpenTelemetry.Collector.AspNetCore.Tests
                     builder.ConfigureTestServices((IServiceCollection services) =>
                     {
                         services.AddSingleton<CallbackMiddleware.CallbackMiddlewareImpl>(new TestCallbackMiddlewareImpl());
-                        services.AddSingleton<ITracer>(tracer);
+                        services.AddSingleton<TraceConfig>(TraceConfig.Default);
+                        services.AddSingleton<SpanProcessor>(spanProcessor.Object);
+                        services.AddSingleton<ITracer, Tracer>();
                     }))
                 .CreateClient())
             {

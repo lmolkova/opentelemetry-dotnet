@@ -27,7 +27,7 @@ namespace OpenTelemetry.Trace.Test
 
     public class CurrentSpanUtilsTest: IDisposable
     {
-        private readonly SpanProcessor spanProcessor = new SimpleSpanProcessor(new NoopSpanExporter());
+        private readonly MultiSpanProcessor spanProcessor = new MultiSpanProcessor(new [] {new SimpleSpanProcessor(new NoopSpanExporter())});
 
         public CurrentSpanUtilsTest()
         {

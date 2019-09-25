@@ -38,11 +38,11 @@ namespace OpenTelemetry.Trace.Test
         private readonly IDictionary<string, object> attributes = new Dictionary<String, object>();
         private readonly List<KeyValuePair<string, object>> expectedAttributes;
         private readonly Mock<SpanProcessor> spanProcessorMock = new Mock<SpanProcessor>(new NoopSpanExporter());
-        private readonly SpanProcessor spanProcessor;
+        private readonly MultiSpanProcessor spanProcessor;
 
         public SpanTest()
         {
-            spanProcessor = spanProcessorMock.Object;
+            spanProcessor = new MultiSpanProcessor(new[] {spanProcessorMock.Object});
             attributes.Add("MyStringAttributeKey", "MyStringAttributeValue");
             attributes.Add("MyLongAttributeKey", 123L);
             attributes.Add("MyBooleanAttributeKey", false);
@@ -236,10 +236,8 @@ namespace OpenTelemetry.Trace.Test
             Assert.True(span.Status.IsValid);
             Assert.Equal(default, span.EndTimestamp);
 
-            var startEndMock = Mock.Get<SpanProcessor>(spanProcessor);
-
             spanProcessorMock.Verify(s => s.OnStart(span), Times.Once);
-            startEndMock.Verify(s => s.OnEnd(span), Times.Never);
+            spanProcessorMock.Verify(s => s.OnEnd(span), Times.Never);
         }
 
         [Fact]

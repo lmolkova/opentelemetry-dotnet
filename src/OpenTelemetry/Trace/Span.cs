@@ -31,7 +31,7 @@ namespace OpenTelemetry.Trace
     public sealed class Span : ISpan
     {
         private readonly TraceConfig traceConfig;
-        private readonly SpanProcessor spanProcessor;
+        private readonly MultiSpanProcessor spanProcessor;
         private readonly Lazy<SpanContext> spanContext;
         private readonly DateTimeOffset startTimestamp;
         private readonly object @lock = new object();
@@ -46,7 +46,7 @@ namespace OpenTelemetry.Trace
                 Tracestate tracestate,
                 SpanKind spanKind,
                 TraceConfig traceConfig,
-                SpanProcessor spanProcessor,
+                MultiSpanProcessor spanProcessor,
                 DateTimeOffset startTimestamp,
                 bool ownsActivity)
         {

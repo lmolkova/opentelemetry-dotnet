@@ -27,7 +27,7 @@ namespace OpenTelemetry.Trace
     /// <inheritdoc/>
     public class SpanBuilder : ISpanBuilder
     {
-        private readonly SpanProcessor spanProcessor;
+        private readonly MultiSpanProcessor spanProcessor;
         private readonly TraceConfig traceConfig;
         private readonly string name;
 
@@ -42,7 +42,7 @@ namespace OpenTelemetry.Trace
         private bool recordEvents;
         private DateTimeOffset startTimestamp;
 
-        internal SpanBuilder(string name, SpanProcessor spanProcessor, TraceConfig traceConfig)
+        internal SpanBuilder(string name, MultiSpanProcessor spanProcessor, TraceConfig traceConfig)
         {
             this.name = name ?? throw new ArgumentNullException(nameof(name));
             this.spanProcessor = spanProcessor ?? throw new ArgumentNullException(nameof(spanProcessor));
