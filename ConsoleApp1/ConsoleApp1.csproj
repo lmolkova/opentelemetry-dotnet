@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\src\OpenTelemetry.Exporter.Zipkin\OpenTelemetry.Exporter.Zipkin.csproj" />
+    <ProjectReference Include="..\src\OpenTelemetry\OpenTelemetry.csproj" />
+  </ItemGroup>
+
+</Project>

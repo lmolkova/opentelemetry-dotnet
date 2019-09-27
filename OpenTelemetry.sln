@@ -92,9 +92,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenTelemetry.Shims.OpenTra
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenTelemetry.Shims.OpenTracing.Tests", "test\OpenTelemetry.Shims.OpenTracing.Tests\OpenTelemetry.Shims.OpenTracing.Tests.csproj", "{49A7853F-5B6F-4B65-A781-7D29A1C92164}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenTelemetry.Exporter.LightStep", "src\OpenTelemetry.Exporter.LightStep\OpenTelemetry.Exporter.LightStep.csproj", "{92B29D96-ACE6-4862-AEEE-F21EC5031076}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenTelemetry.Exporter.LightStep", "src\OpenTelemetry.Exporter.LightStep\OpenTelemetry.Exporter.LightStep.csproj", "{92B29D96-ACE6-4862-AEEE-F21EC5031076}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenTelemetry.Exporter.LightStep.Tests", "test\OpenTelemetry.Exporter.LightStep.Tests\OpenTelemetry.Exporter.LightStep.Tests.csproj", "{BFDC583B-B2F2-4354-A0CE-83816883847C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenTelemetry.Exporter.LightStep.Tests", "test\OpenTelemetry.Exporter.LightStep.Tests\OpenTelemetry.Exporter.LightStep.Tests.csproj", "{BFDC583B-B2F2-4354-A0CE-83816883847C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApp1", "ConsoleApp1\ConsoleApp1.csproj", "{DF86C563-E9AE-4571-9788-DAE1566A6452}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -214,6 +216,10 @@ Global
 		{BFDC583B-B2F2-4354-A0CE-83816883847C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BFDC583B-B2F2-4354-A0CE-83816883847C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BFDC583B-B2F2-4354-A0CE-83816883847C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DF86C563-E9AE-4571-9788-DAE1566A6452}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DF86C563-E9AE-4571-9788-DAE1566A6452}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DF86C563-E9AE-4571-9788-DAE1566A6452}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DF86C563-E9AE-4571-9788-DAE1566A6452}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
