@@ -49,7 +49,7 @@ namespace OpenTelemetry.Collector.AspNetCore.Tests
         {
             var spanProcessor = new Mock<SpanProcessor>(new NoopSpanExporter());
             var tracer = new TracerBuilder()
-                .AddProcessor(spanProcessor.Object)
+                .AddProcessor(_ => spanProcessor.Object)
                 .Build();
 
             void ConfigureTestServices(IServiceCollection services) =>
@@ -94,7 +94,7 @@ namespace OpenTelemetry.Collector.AspNetCore.Tests
                 ActivityTraceFlags.Recorded));
 
             var tracerFactory = new TracerBuilder()
-                .AddProcessor(spanProcessor.Object)
+                .AddProcessor(_ => spanProcessor.Object)
                 .AddTextFormat(tf.Object);
         
             // Arrange
@@ -144,7 +144,7 @@ namespace OpenTelemetry.Collector.AspNetCore.Tests
 
             var spanProcessor = new Mock<SpanProcessor>(new NoopSpanExporter());
             var tracerFactory = new TracerBuilder()
-                .AddProcessor(spanProcessor.Object)
+                .AddProcessor(_ => spanProcessor.Object)
                 .AddCollector((t) => new AspNetCoreCollector(new AspNetCoreCollectorOptions(Filter), t));
 
             void ConfigureTestServices(IServiceCollection services)

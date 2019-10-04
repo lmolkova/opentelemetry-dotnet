@@ -58,7 +58,7 @@ namespace OpenTelemetry.Collector.AspNetCore.Tests
         {
             var spanProcessor = new Mock<SpanProcessor>(new NoopSpanExporter());
             var tracerFactory = new TracerBuilder()
-                .AddProcessor(spanProcessor.Object);
+                .AddProcessor(_ => spanProcessor.Object);
 
             // Arrange
             using (var client = this.factory

@@ -40,7 +40,6 @@ namespace OpenTelemetry.Trace.Configuration
         private ITextFormat textFormat;
         private Tracer defaultTracer;
         private List<Collector> collectorFactories;
-        private List<object> collectors;
 
         public TracerBuilder AddSampler(ISampler sampler)
         {
@@ -62,17 +61,6 @@ namespace OpenTelemetry.Trace.Configuration
             }
 
             this.processorFactory = processorFactory;
-            return this;
-        }
-
-        public TracerBuilder AddProcessor(SpanProcessor spanProcessor)
-        {
-            if (this.processorFactory != null)
-            {
-                throw new ArgumentException("TODO");
-            }
-
-            this.spanProcessor = spanProcessor;
             return this;
         }
 
@@ -117,22 +105,19 @@ namespace OpenTelemetry.Trace.Configuration
                     this.tracerConfigurationOptions = new TracerConfigurationOptions(this.sampler);
                 }
 
-                if (this.spanExporter == null && this.spanProcessor == null)
+                if (this.spanExporter == null)
                 {
                     // TODO log warning
                     this.spanExporter = new NoopSpanExporter();
                 }
 
-                if (this.spanProcessor == null)
-                {
-                    this.spanProcessor = this.processorFactory != null
-                        ? this.processorFactory(this.spanExporter)
-                        : new BatchingSpanProcessor(this.spanExporter);
+                this.spanProcessor = this.processorFactory != null
+                    ? this.processorFactory(this.spanExporter)
+                    : new BatchingSpanProcessor(this.spanExporter);
 
-                    if (this.spanProcessor is IDisposable disposableProcessor)
-                    {
-                        this.disposables.Add(disposableProcessor);
-                    }
+                if (this.spanProcessor is IDisposable disposableProcessor)
+                {
+                    this.disposables.Add(disposableProcessor);
                 }
 
                 this.binaryFormat = new BinaryFormat();
@@ -148,7 +133,6 @@ namespace OpenTelemetry.Trace.Configuration
 
             if (this.collectorFactories != null)
             {
-                this.collectors = new List<object>();
                 foreach (var collector in this.collectorFactories)
                 {
                     var tracer = this.GetTracer(collector.Name, collector.Version);
@@ -172,18 +156,7 @@ namespace OpenTelemetry.Trace.Configuration
             }
 
             var key = new TracerRegistryKey(name, version);
-            return TracerRegistry.GetOrAdd(key, (k) =>
-            {
-                var resource = new Resource(CreateLibraryResourceLabels(name, version));
-                var namedTracer = this.Build(resource);
-
-                if (namedTracer is IDisposable disposableTracer)
-                {
-                    this.disposables.Add(disposableTracer);
-                }
-
-                return namedTracer;
-            });
+            return TracerRegistry.GetOrAdd(key, k => this.Build(k.CreateResource()));
         }
 
         public void Dispose()
@@ -192,17 +165,6 @@ namespace OpenTelemetry.Trace.Configuration
             {
                 disposable.Dispose();
             }
-        }
-
-        private static Dictionary<string, string> CreateLibraryResourceLabels(string name, string version)
-        {
-            var labels = new Dictionary<string, string> { { "name", name } };
-            if (!string.IsNullOrEmpty(version))
-            {
-                labels.Add("version", version);
-            }
-
-            return labels;
         }
 
         private ITracer Build(Resource resource)
@@ -224,6 +186,22 @@ namespace OpenTelemetry.Trace.Configuration
             {
                 this.name = name;
                 this.version = version;
+            }
+
+            internal Resource CreateResource()
+            {
+                return new Resource(CreateLibraryResourceLabels(this.name, this.version));
+            }
+
+            private static IEnumerable<KeyValuePair<string, string>> CreateLibraryResourceLabels(string name, string version)
+            {
+                var labels = new Dictionary<string, string> { { "name", name } };
+                if (!string.IsNullOrEmpty(version))
+                {
+                    labels.Add("version", version);
+                }
+
+                return labels;
             }
         }
 
