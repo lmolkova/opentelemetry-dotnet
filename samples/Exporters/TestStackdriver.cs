@@ -24,8 +24,7 @@ namespace Samples
     using OpenTelemetry.Stats.Aggregations;
     using OpenTelemetry.Stats.Measures;
     using OpenTelemetry.Tags;
-    using OpenTelemetry.Trace;
-    using OpenTelemetry.Trace.Export;
+    using OpenTelemetry.Trace.Configuration;
     using OpenTelemetry.Trace.Sampler;
 
     internal class TestStackdriver
@@ -56,8 +55,19 @@ namespace Samples
                 Stats.ViewManager);
             metricExporter.Start();
 
+<<<<<<< HEAD
+<<<<<<< HEAD
             var tracerFactory = new TracerFactorySdk(new BatchingSpanProcessor(spanExporter));
+=======
+            var tracerFactory = new TracerBuilder()
+                .AddSpanExporter(spanExporter);
+>>>>>>> b8e378d... trash
             var tracer = tracerFactory.GetTracer(string.Empty);
+=======
+            var tracer = new TracerBuilder()
+                .AddExporter(spanExporter)
+                .Build();
+>>>>>>> 6864611... closer
 
             var tagContextBuilder = Tagger.CurrentBuilder.Put(FrontendKey, TagValue.Create("mobile-ios9.3.5"));
 

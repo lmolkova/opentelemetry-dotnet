@@ -21,12 +21,14 @@ namespace Samples
     using System.Threading;
     using OpenTelemetry.Exporter.Zipkin;
     using OpenTelemetry.Trace;
-    using OpenTelemetry.Trace.Export;
+    using OpenTelemetry.Trace.Configuration;
 
     internal class TestZipkin
     {
         internal static object Run(string zipkinUri)
         {
+<<<<<<< HEAD
+<<<<<<< HEAD
             // Configure exporter to export traces to Zipkin
             var exporter = new ZipkinTraceExporter(
                 new ZipkinTraceExporterOptions()
@@ -38,19 +40,33 @@ namespace Samples
             // Create a tracer. You may also need to register it as a global instance to make auto-collectors work..
             var tracerFactory = new TracerFactorySdk(new BatchingSpanProcessor(exporter));
             var tracer = tracerFactory.GetTracer(string.Empty);
+=======
+            using (var tracerFactory = new TracerBuilder()
+>>>>>>> b8e378d... trash
 
-            // Create a scoped span. It will end automatically when using statement ends
-            using (tracer.WithSpan(tracer.SpanBuilder("Main").StartSpan()))
-            {
-                Console.WriteLine("About to do a busy work");
-                for (var i = 0; i < 10; i++)
+                // Configure exporter to export traces to Zipkin
+=======
+            // Configure exporter to export traces to Zipkin
+            using (var tracer = new TracerBuilder()
+>>>>>>> 6864611... closer
+                .AddZipkin(o =>
                 {
-                    DoWork(i, tracer);
+                    o.ServiceName = "test-zipkin";
+                    o.Endpoint = new Uri(zipkinUri);
+                })
+                .Build())
+            {
+                // Create a scoped span. It will end automatically when using statement ends
+                using (tracer.WithSpan(tracer.SpanBuilder("Main").StartSpan()))
+                {
+                    Console.WriteLine("About to do a busy work");
+                    for (var i = 0; i < 10; i++)
+                    {
+                        DoWork(i, tracer);
+                    }
                 }
             }
 
-            // Gracefully shutdown the exporter so it'll flush queued traces to Zipkin.
-            exporter.ShutdownAsync(CancellationToken.None).GetAwaiter().GetResult();
             return null;
         }
 

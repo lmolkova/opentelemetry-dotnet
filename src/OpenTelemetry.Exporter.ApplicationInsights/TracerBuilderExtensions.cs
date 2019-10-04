@@ -1,4 +1,4 @@
-﻿// <copyright file="Tracing.cs" company="OpenTelemetry Authors">
+﻿// <copyright file="TracerBuilderExtensions.cs" company="OpenTelemetry Authors">
 // Copyright 2018, OpenTelemetry Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,23 +14,16 @@
 // limitations under the License.
 // </copyright>
 
-namespace OpenTelemetry.Trace
+namespace OpenTelemetry.Exporter.ApplicationInsights
 {
+    using Microsoft.ApplicationInsights.Extensibility;
     using OpenTelemetry.Trace.Configuration;
 
-    /// <summary>
-    /// Class that manages a global instance of the <see cref="Tracer"/>.
-    /// </summary>
-    public static class Tracing
+    public static class TracerBuilderExtensions
     {
-        static Tracing()
+        public static TracerBuilder AddApplicationInsights(this TracerBuilder builder, TelemetryConfiguration configuration)
         {
-            TracerFactory = new TracerBuilder();
+            return builder.AddExporter(new ApplicationInsightsTraceExporter(configuration));
         }
-
-        /// <summary>   
-        /// Gets the tracer to record spans.
-        /// </summary>
-        public static TracerFactory TracerFactory { get; }
     }
 }

@@ -1,4 +1,4 @@
-﻿// <copyright file="Tracing.cs" company="OpenTelemetry Authors">
+﻿// <copyright file="TracerBuilderExtensions.cs" company="OpenTelemetry Authors">
 // Copyright 2018, OpenTelemetry Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,23 +14,23 @@
 // limitations under the License.
 // </copyright>
 
-namespace OpenTelemetry.Trace
+namespace OpenTelemetry.Exporter.Zipkin
 {
+    using System;
     using OpenTelemetry.Trace.Configuration;
 
-    /// <summary>
-    /// Class that manages a global instance of the <see cref="Tracer"/>.
-    /// </summary>
-    public static class Tracing
+    public static class TracerBuilderExtensions
     {
-        static Tracing()
+        public static TracerBuilder AddZipkin(this TracerBuilder builder, ZipkinTraceExporterOptions options)
         {
-            TracerFactory = new TracerBuilder();
+            return builder.AddExporter(new ZipkinTraceExporter(options));
         }
 
-        /// <summary>   
-        /// Gets the tracer to record spans.
-        /// </summary>
-        public static TracerFactory TracerFactory { get; }
+        public static TracerBuilder AddZipkin(this TracerBuilder builder, Action<ZipkinTraceExporterOptions> configureOptions)
+        {
+            var options = new ZipkinTraceExporterOptions();
+            configureOptions(options);
+            return builder.AddExporter(new ZipkinTraceExporter(options));
+        }
     }
 }

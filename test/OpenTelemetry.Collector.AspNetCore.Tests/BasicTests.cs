@@ -14,9 +14,6 @@
 // limitations under the License.
 // </copyright>
 
-using System.Threading;
-using OpenTelemetry.Resources;
-
 namespace OpenTelemetry.Collector.AspNetCore.Tests
 {
     using Xunit;
@@ -30,6 +27,7 @@ namespace OpenTelemetry.Collector.AspNetCore.Tests
     using Moq;
     using Microsoft.AspNetCore.TestHost;
     using System;
+    using System.Threading;
     using OpenTelemetry.Context.Propagation;
     using Microsoft.AspNetCore.Http;
     using System.Collections.Generic;
@@ -50,10 +48,12 @@ namespace OpenTelemetry.Collector.AspNetCore.Tests
         public async Task SuccessfulTemplateControllerCallGeneratesASpan()
         {
             var spanProcessor = new Mock<SpanProcessor>(new NoopSpanExporter());
-            var tracerFactory = new TracerFactorySdk(spanProcessor.Object);
+            var tracer = new TracerBuilder()
+                .AddProcessor(spanProcessor.Object)
+                .Build();
 
             void ConfigureTestServices(IServiceCollection services) =>
-                services.AddSingleton<ITracer>(tracerFactory.GetTracer(null));
+                services.AddSingleton<ITracer>(tracer);
 
             // Arrange
             using (var client = this.factory
@@ -93,15 +93,16 @@ namespace OpenTelemetry.Collector.AspNetCore.Tests
                 expectedSpanId,
                 ActivityTraceFlags.Recorded));
 
-            var tracerFactory = new TracerFactorySdk(spanProcessor.Object, null, tf.Object);
-
+            var tracerFactory = new TracerBuilder()
+                .AddProcessor(spanProcessor.Object)
+                .AddTextFormat(tf.Object);
+        
             // Arrange
             using (var client = this.factory
                 .WithWebHostBuilder(builder =>
                     builder.ConfigureTestServices(services =>
                     {
                         services.AddSingleton<ITracer>(tracerFactory.GetTracer(null));
-
                     }))
                 .CreateClient())
             {
@@ -129,25 +130,26 @@ namespace OpenTelemetry.Collector.AspNetCore.Tests
         [Fact]
         public async Task FilterOutRequest()
         {
+            bool Filter(string eventName, object arg1, object _)
+            {
+                if (eventName == "Microsoft.AspNetCore.Hosting.HttpRequestIn" &&
+                    arg1 is HttpContext context &&
+                    context.Request.Path == "/api/values/2")
+                {
+                    return false;
+                }
+
+                return true;
+            }
+
             var spanProcessor = new Mock<SpanProcessor>(new NoopSpanExporter());
-            var tracerFactory = new TracerFactorySdk(spanProcessor.Object);
+            var tracerFactory = new TracerBuilder()
+                .AddProcessor(spanProcessor.Object)
+                .AddCollector((t) => new AspNetCoreCollector(new AspNetCoreCollectorOptions(Filter), t));
 
             void ConfigureTestServices(IServiceCollection services)
             {
-                bool Filter(string eventName, object arg1, object _)
-                {
-                    if (eventName == "Microsoft.AspNetCore.Hosting.HttpRequestIn" &&
-                        arg1 is HttpContext context &&
-                        context.Request.Path == "/api/values/2")
-                    {
-                        return false;
-                    }
-
-                    return true;
-                }
-
-                services.AddSingleton<AspNetCoreCollectorOptions>(_ => new AspNetCoreCollectorOptions(Filter));
-                services.AddSingleton<ITracer>(tracerFactory.GetTracer(null)); ;
+                services.AddSingleton<TracerFactory>(tracerFactory);
             }
 
             // Arrange

@@ -1,4 +1,4 @@
-﻿// <copyright file="Tracing.cs" company="OpenTelemetry Authors">
+﻿// <copyright file="TracerBuilderExtensions.cs" company="OpenTelemetry Authors">
 // Copyright 2018, OpenTelemetry Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,23 +14,18 @@
 // limitations under the License.
 // </copyright>
 
-namespace OpenTelemetry.Trace
+namespace OpenTelemetry.Collector.Dependencies
 {
     using OpenTelemetry.Trace.Configuration;
 
-    /// <summary>
-    /// Class that manages a global instance of the <see cref="Tracer"/>.
-    /// </summary>
-    public static class Tracing
+    public static class TracerBuilderExtensions
     {
-        static Tracing()
+        public static TracerBuilder AddDependencyCollector(this TracerBuilder builder, HttpClientCollectorOptions options)
         {
-            TracerFactory = new TracerBuilder();
+            builder.AddCollector((t) => new AzureClientsCollector(t));
+            builder.AddCollector((t) => new AzurePipelineCollector(t));
+            builder.AddCollector((t) => new HttpClientCollector(options, t));
+            return builder;
         }
-
-        /// <summary>   
-        /// Gets the tracer to record spans.
-        /// </summary>
-        public static TracerFactory TracerFactory { get; }
     }
 }

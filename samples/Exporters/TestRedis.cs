@@ -22,7 +22,7 @@ namespace Samples
     using OpenTelemetry.Collector.StackExchangeRedis;
     using OpenTelemetry.Exporter.Zipkin;
     using OpenTelemetry.Trace;
-    using OpenTelemetry.Trace.Export;
+    using OpenTelemetry.Trace.Configuration;
     using StackExchange.Redis;
 
     internal class TestRedis
@@ -38,7 +38,20 @@ namespace Samples
                 });
 
             // Create a tracer. You may also need to register it as a global instance to make auto-collectors work..
+<<<<<<< HEAD
+<<<<<<< HEAD
             var tracerFactory = new TracerFactorySdk(new BatchingSpanProcessor(exporter));
+=======
+            var tracerFactory = new TracerBuilder()
+=======
+            var tracerFactory = new TracingConfiguration()
+>>>>>>> 6864611... closer
+                .AddZipkin(o =>
+                {
+                    o.ServiceName = "test-zipkin";
+                    o.Endpoint = new Uri(zipkinUri);
+                });
+>>>>>>> b8e378d... trash
             var tracer = tracerFactory.GetTracer(string.Empty);
 
             var collector = new StackExchangeRedisCallsCollector(tracer);

@@ -27,8 +27,8 @@ namespace LoggingTracer.Demo.AspNetCore
 
         internal static void UseLoggingTracer(this IApplicationBuilder app)
         {
-            app.ApplicationServices.GetService<AspNetCoreCollector>(); // get it instantiated
-            app.ApplicationServices.GetService<DependenciesCollector>(); // get it instantiated
+            app.ApplicationServices.GetRequiredService<AspNetCoreCollector>();
+            app.ApplicationServices.GetRequiredService<DependenciesCollector>();
         }
     }
 }

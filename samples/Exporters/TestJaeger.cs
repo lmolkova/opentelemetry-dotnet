@@ -21,7 +21,7 @@ namespace Samples
     using System.Threading;
     using OpenTelemetry.Exporter.Jaeger;
     using OpenTelemetry.Trace;
-    using OpenTelemetry.Trace.Export;
+    using OpenTelemetry.Trace.Configuration;
 
     internal class TestJaeger
     {
@@ -39,8 +39,19 @@ namespace Samples
                 jaegerOptions);
 
             // Create a tracer. You may also need to register it as a global instance to make auto-collectors work..
+<<<<<<< HEAD
+<<<<<<< HEAD
             var tracerFactory = new TracerFactorySdk(new BatchingSpanProcessor(exporter));
+=======
+            var tracerFactory = new TracerBuilder()
+                .AddSpanExporter(exporter);
+>>>>>>> b8e378d... trash
             var tracer = tracerFactory.GetTracer(string.Empty);
+=======
+            var tracer = new TracerBuilder()
+                .AddExporter(exporter)
+                .Build();
+>>>>>>> 6864611... closer
 
             // Create a scoped span. It will end automatically when using statement ends
             using (tracer.WithSpan(tracer.SpanBuilder("Main").StartSpan()))

@@ -21,7 +21,7 @@ namespace Samples
     using System.Threading;
     using OpenTelemetry.Collector.Dependencies;
     using OpenTelemetry.Exporter.Zipkin;
-    using OpenTelemetry.Trace;
+    using OpenTelemetry.Trace.Configuration;
     using OpenTelemetry.Trace.Export;
     using OpenTelemetry.Trace.Sampler;
 
@@ -38,11 +38,34 @@ namespace Samples
                     ServiceName = typeof(Program).Assembly.GetName().Name,
                 });
 
+<<<<<<< HEAD
+<<<<<<< HEAD
             var tracerFactory = new TracerFactorySdk(new BatchingSpanProcessor(exporter));
             var tracer = tracerFactory.GetTracer(nameof(HttpClientCollector));
             using (new HttpClientCollector(new HttpClientCollectorOptions(), tracer))
+=======
+            var tracerBuilder = new TracerBuilder()
+                .AddSpanExporter(exporter)
+                .AddSpanProcessor(e => new BatchingSpanProcessor(e))
+                .AddCollector(t => new HttpClientCollector(new DependenciesCollectorOptions(), t));
+
+            var tracer = tracerBuilder.GetTracer(string.Empty);
+<<<<<<< HEAD
+            using (new DependenciesCollector(new DependenciesCollectorOptions(), tracerBuilder))
+>>>>>>> b8e378d... trash
+=======
+>>>>>>> 6a8c8a0... better
+=======
+            using (var tracerBuilder = new TracerBuilder())
+>>>>>>> 6864611... closer
             {
-                using (tracer.WithSpan(tracer.SpanBuilder("incoming request").SetSampler(Samplers.AlwaysSample).StartSpan()))
+                var tracer = tracerBuilder.AddExporter(exporter)
+                    .AddProcessor(e => new BatchingSpanProcessor(e))
+                    .AddCollector(t => new HttpClientCollector(new HttpClientCollectionOptions(), t))
+                    .Build();
+
+                using (tracer.WithSpan(tracer.SpanBuilder("incoming request").SetSampler(Samplers.AlwaysSample)
+                    .StartSpan()))
                 {
                     using (var client = new HttpClient())
                     {
