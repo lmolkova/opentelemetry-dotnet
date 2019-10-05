@@ -17,6 +17,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using OpenTelemetry.Exporter.LightStep.Implementation;
+using OpenTelemetry.Trace.Configuration;
 
 namespace OpenTelemetry.Exporter.LightStep.Tests
 {
@@ -27,6 +28,13 @@ namespace OpenTelemetry.Exporter.LightStep.Tests
 
     public class LightStepSpanConverterTest
     {
+        private readonly ITracer tracer;
+
+        public LightStepSpanConverterTest()
+        {
+            tracer = new TracerBuilder().Build();
+        }
+
         [Fact]
         public void AllPropertiesShouldTranslate()
         {
@@ -66,7 +74,7 @@ namespace OpenTelemetry.Exporter.LightStep.Tests
             var link = new Link(new SpanContext(
                 traceId, linkedSpanId, ActivityTraceFlags.Recorded));
 
-            var span = (Span)Tracing.TracerFactory.GetTracer("")
+            var span = (Span)tracer
                 .SpanBuilder("Test")
                 .SetParent(new SpanContext(traceId, parentId, ActivityTraceFlags.Recorded))
                 .SetSpanKind(SpanKind.Client)

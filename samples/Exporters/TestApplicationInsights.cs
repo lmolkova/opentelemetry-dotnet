@@ -34,7 +34,10 @@ namespace Samples
         private static readonly ITagger Tagger = Tags.Tagger;
 
         private static readonly IStatsRecorder StatsRecorder = Stats.StatsRecorder;
-        private static readonly IMeasureLong VideoSize = MeasureLong.Create("my.org/measure/video_size", "size of processed videos", "By");
+
+        private static readonly IMeasureLong VideoSize =
+            MeasureLong.Create("my.org/measure/video_size", "size of processed videos", "By");
+
         private static readonly TagKey FrontendKey = TagKey.Create("my.org/keys/frontend");
 
         private static readonly long MiB = 1 << 20;
@@ -45,40 +48,26 @@ namespace Samples
             VideoSizeViewName,
             "processed video size over time",
             VideoSize,
-            Distribution.Create(BucketBoundaries.Create(new List<double>() { 0.0, 16.0 * MiB, 256.0 * MiB })),
-            new List<TagKey>() { FrontendKey });
+            Distribution.Create(BucketBoundaries.Create(new List<double>() {0.0, 16.0 * MiB, 256.0 * MiB})),
+            new List<TagKey>() {FrontendKey});
 
         internal static object Run()
         {
-            var config = new TelemetryConfiguration { InstrumentationKey = "instrumentation-key" };
+            var config = new TelemetryConfiguration {InstrumentationKey = "instrumentation-key"};
             var metricExporter = new ApplicationInsightsMetricExporter(Stats.ViewManager, config);
             metricExporter.Start();
 
             var tagContextBuilder = Tagger.CurrentBuilder.Put(FrontendKey, TagValue.Create("mobile-ios9.3.5"));
 
-            var tracerFactory = new TracerRegistry().TracerBuilder
-                .AddApplicationInsights(config)
-                
-
-            var tracer = tracerFactory.GetTracer(string.Empty);
-            var spanBuilder = tracer
-                .SpanBuilder("incoming request")
-                .SetRecordEvents(true)
-                .SetSampler(Samplers.AlwaysSample);
-=======
-            using (var tracerFactory = new TracerBuilder()
-                .AddApplicationInsights(config))
-=======
-            using (var tracer = new TracerBuilder()
-                .AddApplicationInsights(config)
-                .Build())
->>>>>>> 6864611... closer
+            using (var tracerBuilder = new TracerBuilder())
             {
+                var tracer = tracerBuilder.UseApplicationInsights(config)
+                    .Build();
+
                 var spanBuilder = tracer
                     .SpanBuilder("incoming request")
                     .SetRecordEvents(true)
                     .SetSampler(Samplers.AlwaysSample);
->>>>>>> b8e378d... trash
 
                 Stats.ViewManager.RegisterView(VideoSizeView);
 

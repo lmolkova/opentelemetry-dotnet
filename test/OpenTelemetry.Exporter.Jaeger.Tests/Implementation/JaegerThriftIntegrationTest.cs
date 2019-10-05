@@ -15,6 +15,7 @@
 // </copyright>
 
 using System.Reflection;
+using OpenTelemetry.Trace.Configuration;
 
 namespace OpenTelemetry.Exporter.Jaeger.Tests.Implementation
 {
@@ -32,6 +33,13 @@ namespace OpenTelemetry.Exporter.Jaeger.Tests.Implementation
 
     public class JaegerThriftIntegrationTest
     {
+        private readonly ITracer tracer;
+
+        public JaegerThriftIntegrationTest()
+        {
+            tracer = new TracerBuilder().Build();
+        }
+
         [Fact]
         public async void JaegerThriftIntegrationTest_TAbstractBaseGeneratesConsistentThriftPayload()
         {
@@ -99,7 +107,7 @@ namespace OpenTelemetry.Exporter.Jaeger.Tests.Implementation
                     linkedSpanId,
                     ActivityTraceFlags.Recorded));
 
-            var span = (Span)Tracing.TracerFactory.GetTracer("")
+            var span = (Span)tracer
                 .SpanBuilder("Name")
                 .SetParent(new SpanContext(traceId, parentSpanId, ActivityTraceFlags.Recorded))
                 .SetSpanKind(SpanKind.Client)

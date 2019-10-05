@@ -27,35 +27,17 @@ namespace Samples
     {
         internal static object Run(string zipkinUri)
         {
-<<<<<<< HEAD
-<<<<<<< HEAD
             // Configure exporter to export traces to Zipkin
-            var exporter = new ZipkinTraceExporter(
-                new ZipkinTraceExporterOptions()
-                {
-                    Endpoint = new Uri(zipkinUri),
-                    ServiceName = "tracing-to-zipkin-service",
-                });
-
-            // Create a tracer. You may also need to register it as a global instance to make auto-collectors work..
-            var tracerFactory = new TracerFactorySdk(new BatchingSpanProcessor(exporter));
-            var tracer = tracerFactory.GetTracer(string.Empty);
-=======
-            using (var tracerFactory = new TracerBuilder()
->>>>>>> b8e378d... trash
-
-                // Configure exporter to export traces to Zipkin
-=======
-            // Configure exporter to export traces to Zipkin
-            using (var tracer = new TracerBuilder()
->>>>>>> 6864611... closer
-                .AddZipkin(o =>
-                {
-                    o.ServiceName = "test-zipkin";
-                    o.Endpoint = new Uri(zipkinUri);
-                })
-                .Build())
+            using (var tracerBuilder = new TracerBuilder())
             {
+                var tracer = tracerBuilder
+                    .UseZipkin(o =>
+                    {
+                        o.ServiceName = "test-zipkin";
+                        o.Endpoint = new Uri(zipkinUri);
+                    })
+                    .Build();
+
                 // Create a scoped span. It will end automatically when using statement ends
                 using (tracer.WithSpan(tracer.SpanBuilder("Main").StartSpan()))
                 {

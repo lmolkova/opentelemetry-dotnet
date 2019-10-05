@@ -29,53 +29,41 @@ namespace Samples
     {
         internal static object Run(string zipkinUri)
         {
-            // Configure exporter to export traces to Zipkin
-            var exporter = new ZipkinTraceExporter(
-                new ZipkinTraceExporterOptions()
-                {
-                    Endpoint = new Uri(zipkinUri),
-                    ServiceName = "tracing-to-zipkin-service",
-                });
-
-            // Create a tracer. You may also need to register it as a global instance to make auto-collectors work..
-<<<<<<< HEAD
-<<<<<<< HEAD
-            var tracerFactory = new TracerFactorySdk(new BatchingSpanProcessor(exporter));
-=======
-            var tracerFactory = new TracerBuilder()
-=======
-            var tracerFactory = new TracingConfiguration()
->>>>>>> 6864611... closer
-                .AddZipkin(o =>
-                {
-                    o.ServiceName = "test-zipkin";
-                    o.Endpoint = new Uri(zipkinUri);
-                });
->>>>>>> b8e378d... trash
-            var tracer = tracerFactory.GetTracer(string.Empty);
-
-            var collector = new StackExchangeRedisCallsCollector(tracer);
-
             // connect to the server
             var connection = ConnectionMultiplexer.Connect("localhost:6379");
-            connection.RegisterProfiler(collector.GetProfilerSessionsFactory());
 
-            // select a database (by default, DB = 0)
-            var db = connection.GetDatabase();
-
-            // Create a scoped span. It will end automatically when using statement ends
-            using (tracer.WithSpan(tracer.SpanBuilder("Main").StartSpan()))
+            // Configure exporter to export traces to Zipkin
+            using (var tracerBuilder = new TracerBuilder())
             {
-                Console.WriteLine("About to do a busy work");
-                for (var i = 0; i < 10; i++)
-                {
-                    DoWork(db, tracer);
-                }
-            }
+                var tracer = tracerBuilder
+                    .UseZipkin(o =>
+                    {
+                        o.ServiceName = "test-zipkin";
+                        o.Endpoint = new Uri(zipkinUri);
+                    })
+                    .AddCollector(t =>
+                    {
+                        var collector = new StackExchangeRedisCallsCollector(t);
+                        connection.RegisterProfiler(collector.GetProfilerSessionsFactory());
+                        return collector;
+                    })
+                    .Build();
 
-            // Gracefully shutdown the exporter so it'll flush queued traces to Zipkin.
-            exporter.ShutdownAsync(CancellationToken.None).GetAwaiter().GetResult();
-            return null;
+                // select a database (by default, DB = 0)
+                var db = connection.GetDatabase();
+
+                // Create a scoped span. It will end automatically when using statement ends
+                using (tracer.WithSpan(tracer.SpanBuilder("Main").StartSpan()))
+                {
+                    Console.WriteLine("About to do a busy work");
+                    for (var i = 0; i < 10; i++)
+                    {
+                        DoWork(db, tracer);
+                    }
+                }
+
+                return null;
+            }
         }
 
         private static void DoWork(IDatabase db, ITracer tracer)

@@ -23,7 +23,7 @@ namespace OpenTelemetry.Exporter.ApplicationInsights
     {
         public static TracerBuilder AddApplicationInsights(this TracerBuilder builder, TelemetryConfiguration configuration)
         {
-            return builder.AddExporter(new ApplicationInsightsTraceExporter(configuration));
+            return builder.SetExporter(new ApplicationInsightsTraceExporter(configuration));
         }
     }
 }

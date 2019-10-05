@@ -22,34 +22,25 @@ namespace Samples
                     ServiceName = "tracing-to-lightstep-service",
                 });
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-            var tracerFactory = new TracerFactorySdk(new BatchingSpanProcessor(exporter));
-=======
-            var tracerFactory = new TracerBuilder()
-                .AddSpanExporter(exporter);
->>>>>>> b8e378d... trash
-            var tracer = tracerFactory.GetTracer(string.Empty);
-            
-=======
-            var tracer = new TracerBuilder()
-                .AddExporter(exporter)
-                .Build();
-
->>>>>>> 6864611... closer
-            using (tracer.WithSpan(tracer.SpanBuilder("Main").StartSpan()))
+            // Create a tracer. 
+            using (var tracerBuilder = new TracerBuilder())
             {
-                tracer.CurrentSpan.SetAttribute("custom-attribute", 55);
-                Console.WriteLine("About to do a busy work");
-                for (int i = 0; i < 10; i++)
+                var tracer = tracerBuilder
+                    .SetExporter(exporter)
+                    .Build();
+                using (tracer.WithSpan(tracer.SpanBuilder("Main").StartSpan()))
                 {
-                    DoWork(i, tracer);
+                    tracer.CurrentSpan.SetAttribute("custom-attribute", 55);
+                    Console.WriteLine("About to do a busy work");
+                    for (int i = 0; i < 10; i++)
+                    {
+                        DoWork(i, tracer);
+                    }
                 }
+
+                Thread.Sleep(10000);
+                return null;
             }
-            Thread.Sleep(10000);
-            // 5. Gracefully shutdown the exporter so it'll flush queued traces to LightStep.
-            exporter.ShutdownAsync(CancellationToken.None).GetAwaiter().GetResult();
-            return null;
         }
         
         private static void DoWork(int i, ITracer tracer)

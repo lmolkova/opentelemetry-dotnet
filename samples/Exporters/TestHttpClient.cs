@@ -31,37 +31,11 @@ namespace Samples
         {
             Console.WriteLine("Hello World!");
 
-            var exporter = new ZipkinTraceExporter(
-                new ZipkinTraceExporterOptions()
-                {
-                    Endpoint = new Uri("https://zipkin.azurewebsites.net/api/v2/spans"),
-                    ServiceName = typeof(Program).Assembly.GetName().Name,
-                });
-
-<<<<<<< HEAD
-<<<<<<< HEAD
-            var tracerFactory = new TracerFactorySdk(new BatchingSpanProcessor(exporter));
-            var tracer = tracerFactory.GetTracer(nameof(HttpClientCollector));
-            using (new HttpClientCollector(new HttpClientCollectorOptions(), tracer))
-=======
-            var tracerBuilder = new TracerBuilder()
-                .AddSpanExporter(exporter)
-                .AddSpanProcessor(e => new BatchingSpanProcessor(e))
-                .AddCollector(t => new HttpClientCollector(new DependenciesCollectorOptions(), t));
-
-            var tracer = tracerBuilder.GetTracer(string.Empty);
-<<<<<<< HEAD
-            using (new DependenciesCollector(new DependenciesCollectorOptions(), tracerBuilder))
->>>>>>> b8e378d... trash
-=======
->>>>>>> 6a8c8a0... better
-=======
             using (var tracerBuilder = new TracerBuilder())
->>>>>>> 6864611... closer
             {
-                var tracer = tracerBuilder.AddExporter(exporter)
-                    .AddProcessor(e => new BatchingSpanProcessor(e))
-                    .AddCollector(t => new HttpClientCollector(new HttpClientCollectionOptions(), t))
+                var tracer = tracerBuilder
+                    .UseZipkin(o => o.ServiceName = "test-http-client")
+                    .AddDependencyCollector(new HttpClientCollectorOptions())
                     .Build();
 
                 using (tracer.WithSpan(tracer.SpanBuilder("incoming request").SetSampler(Samplers.AlwaysSample)
@@ -75,7 +49,6 @@ namespace Samples
 
                 Console.ReadLine();
 
-                exporter.ShutdownAsync(CancellationToken.None).GetAwaiter().GetResult();
                 return null;
             }
         }

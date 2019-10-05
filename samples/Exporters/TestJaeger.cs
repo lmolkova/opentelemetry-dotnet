@@ -38,35 +38,26 @@ namespace Samples
             var exporter = new JaegerTraceExporter(
                 jaegerOptions);
 
-            // Create a tracer. You may also need to register it as a global instance to make auto-collectors work..
-<<<<<<< HEAD
-<<<<<<< HEAD
-            var tracerFactory = new TracerFactorySdk(new BatchingSpanProcessor(exporter));
-=======
-            var tracerFactory = new TracerBuilder()
-                .AddSpanExporter(exporter);
->>>>>>> b8e378d... trash
-            var tracer = tracerFactory.GetTracer(string.Empty);
-=======
-            var tracer = new TracerBuilder()
-                .AddExporter(exporter)
-                .Build();
->>>>>>> 6864611... closer
-
-            // Create a scoped span. It will end automatically when using statement ends
-            using (tracer.WithSpan(tracer.SpanBuilder("Main").StartSpan()))
+            // Create a tracer. 
+            using (var tracerBuilder = new TracerBuilder())
             {
-                tracer.CurrentSpan.SetAttribute("custom-attribute", 55);
-                Console.WriteLine("About to do a busy work");
-                for (int i = 0; i < 10; i++)
-                {
-                    DoWork(i, tracer);
-                }
-            }
+                var tracer = tracerBuilder
+                    .SetExporter(exporter)
+                    .Build();
 
-            // Gracefully shutdown the exporter so it'll flush queued traces to Jaeger.
-            exporter.ShutdownAsync(CancellationToken.None).GetAwaiter().GetResult();
-            return null;
+                // Create a scoped span. It will end automatically when using statement ends
+                using (tracer.WithSpan(tracer.SpanBuilder("Main").StartSpan()))
+                {
+                    tracer.CurrentSpan.SetAttribute("custom-attribute", 55);
+                    Console.WriteLine("About to do a busy work");
+                    for (int i = 0; i < 10; i++)
+                    {
+                        DoWork(i, tracer);
+                    }
+                }
+
+                return null;
+            }
         }
 
         private static void DoWork(int i, ITracer tracer)

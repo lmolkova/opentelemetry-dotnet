@@ -25,45 +25,32 @@ namespace OpenTelemetry.Trace.Configuration
 
     public class TracerBuilder : IDisposable
     {
-        private readonly List<IDisposable> disposables = new List<IDisposable>();
-
         private TracerConfigurationOptions tracerConfigurationOptions;
         private ISampler sampler;
         private Func<SpanExporter, SpanProcessor> processorFactory;
         private SpanExporter spanExporter;
         private SpanProcessor spanProcessor;
-        private IBinaryFormat binaryFormat;
-        private ITextFormat textFormat;
+        private IBinaryFormat binaryFormat = new BinaryFormat();
+        private ITextFormat textFormat = new TraceContextFormat();
         private Tracer tracer;
+        private readonly List<IDisposable> disposables = new List<IDisposable>();
         private List<Collector> collectorFactories;
 
-        public TracerBuilder AddSampler(ISampler sampler)
+        public TracerBuilder SetSampler(ISampler sampler)
         {
             this.sampler = sampler;
             return this;
         }
 
-        public TracerBuilder AddExporter(SpanExporter spanExporter)
+        public TracerBuilder SetExporter(SpanExporter spanExporter)
         {
             this.spanExporter = spanExporter;
             return this;
         }
 
-        public TracerBuilder AddProcessor(Func<SpanExporter, SpanProcessor> processorFactory)
+        public TracerBuilder SetProcessor(Func<SpanExporter, SpanProcessor> processorFactory)
         {
             this.processorFactory = processorFactory;
-            return this;
-        }
-
-        public TracerBuilder ConfigureTracerOptions(TracerConfigurationOptions options)
-        {
-            this.tracerConfigurationOptions = options;
-            return this;
-        }
-
-        public TracerBuilder AddTextFormat(ITextFormat textFormat)
-        {
-            this.textFormat = textFormat;
             return this;
         }
 
@@ -78,6 +65,24 @@ namespace OpenTelemetry.Trace.Configuration
 
             this.collectorFactories.Add(new Collector(typeof(TCollector).Name, null, collectorFactory));
 
+            return this;
+        }
+
+        public TracerBuilder SetTracerOptions(TracerConfigurationOptions options)
+        {
+            this.tracerConfigurationOptions = options;
+            return this;
+        }
+
+        public TracerBuilder SetTextFormat(ITextFormat textFormat)
+        {
+            this.textFormat = textFormat;
+            return this;
+        }
+
+        public TracerBuilder SetBinaryFormat(IBinaryFormat binaryFormat)
+        {
+            this.binaryFormat = binaryFormat;
             return this;
         }
 
@@ -106,30 +111,21 @@ namespace OpenTelemetry.Trace.Configuration
                     ? this.processorFactory(this.spanExporter)
                     : new BatchingSpanProcessor(this.spanExporter);
 
-                if (this.spanProcessor is IDisposable disposableProcessor)
-                {
-                    this.disposables.Add(disposableProcessor);
-                }
-
-                this.binaryFormat = new BinaryFormat();
-                this.textFormat = new TraceContextFormat();
-
                 this.tracer = new Tracer(
                     this.spanProcessor,
                     this.tracerConfigurationOptions,
                     this.binaryFormat,
                     this.textFormat,
                     Resource.Empty);
-            }
 
-            if (this.collectorFactories != null)
-            {
+                if (this.collectorFactories == null)
+                {
+                    return this.tracer;
+                }
+
                 foreach (var collector in this.collectorFactories)
                 {
-                    // there is only one TracerFactory in the process. Ever.
-                    var collectorTracer = TracerFactory.Default.GetTracer(collector.Name, collector.Version);
-                    var collectorInstance = collector.Factory.Invoke(collectorTracer);
-
+                    var collectorInstance = collector.Factory.Invoke(this.tracer);
                     if (collectorInstance is IDisposable disposableCollector)
                     {
                         this.disposables.Add(disposableCollector);
@@ -142,6 +138,11 @@ namespace OpenTelemetry.Trace.Configuration
 
         public void Dispose()
         {
+            if (this.spanProcessor is IDisposable disposableProcessor)
+            {
+                disposableProcessor.Dispose();
+            }
+
             foreach (var disposable in this.disposables)
             {
                 disposable.Dispose();

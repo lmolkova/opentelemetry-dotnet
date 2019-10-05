@@ -14,6 +14,9 @@
 // limitations under the License.
 // </copyright>
 
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace.Configuration;
+
 namespace OpenTelemetry.Collector.AspNetCore.Tests
 {
     using Xunit;
@@ -22,7 +25,6 @@ namespace OpenTelemetry.Collector.AspNetCore.Tests
     using System.Threading.Tasks;
     using Microsoft.Extensions.DependencyInjection;
     using OpenTelemetry.Trace;
-    using OpenTelemetry.Trace.Configuration;
     using OpenTelemetry.Trace.Export;
     using Moq;
     using Microsoft.AspNetCore.TestHost;
@@ -48,12 +50,13 @@ namespace OpenTelemetry.Collector.AspNetCore.Tests
         public async Task SuccessfulTemplateControllerCallGeneratesASpan()
         {
             var spanProcessor = new Mock<SpanProcessor>(new NoopSpanExporter());
-            var tracer = new TracerBuilder()
-                .AddProcessor(_ => spanProcessor.Object)
-                .Build();
 
-            void ConfigureTestServices(IServiceCollection services) =>
-                services.AddSingleton<ITracer>(tracer);
+            void ConfigureTestServices(IServiceCollection services)
+            {
+                services.AddSingleton<SpanProcessor>(spanProcessor.Object);
+                services.AddSingleton<ITracer, Tracer>();
+            }
+                
 
             // Arrange
             using (var client = this.factory
@@ -93,17 +96,14 @@ namespace OpenTelemetry.Collector.AspNetCore.Tests
                 expectedSpanId,
                 ActivityTraceFlags.Recorded));
 
-            var tracer = new TracerBuilder()
-                .AddProcessor(_ => spanProcessor.Object)
-                .AddTextFormat(tf.Object)
-                .Build();
-        
+       
             // Arrange
             using (var client = this.factory
                 .WithWebHostBuilder(builder =>
                     builder.ConfigureTestServices(services =>
                     {
-                        services.AddSingleton<ITracer>(tracer);
+                        services.AddSingleton<ITracer>(_ => 
+                            new Tracer(spanProcessor.Object, new TracerConfigurationOptions(), new BinaryFormat(), tf.Object, Resource.Empty));
                     }))
                 .CreateClient())
             {
@@ -144,13 +144,12 @@ namespace OpenTelemetry.Collector.AspNetCore.Tests
             }
 
             var spanProcessor = new Mock<SpanProcessor>(new NoopSpanExporter());
-            var tracerFactory = new TracerRegistry()
-                .AddProcessor(_ => spanProcessor.Object)
-                .AddCollector((t) => new AspNetCoreCollector(new AspNetCoreCollectorOptions(Filter), t));
 
             void ConfigureTestServices(IServiceCollection services)
             {
-                services.AddSingleton<TracerFactory>(tracerFactory);
+                services.AddSingleton<SpanProcessor>(spanProcessor.Object);
+                services.AddSingleton<AspNetCoreCollectorOptions>(new AspNetCoreCollectorOptions(Filter));
+                services.AddSingleton<ITracer, Tracer>();
             }
 
             // Arrange
