@@ -40,16 +40,18 @@ namespace OpenTelemetry.Trace
         protected void Init(TracerFactory factoryImplementation)
         {
             // if already init - throw
+            if (this.factoryImplementation == null)
+            {
+                // some libraries might have already used and cached ProxyTracer.
+                // let's update it to real one and forward all calls.
 
-            // some libraries might have already used and cached ProxyTracer.
-            // let's update it to real one and forward all calls.
+                // resource assignment is not possible for libraries that cache tracer before SDK is initialized.
+                // SDK (Tracer) must be at least partially initialized before any collection starts to capture resources.
+                // we might be able to work this around with events.
+                this.proxy.UpdateTracer(factoryImplementation.GetTracer(null));
 
-            // resource assignment is not possible for libraries that cache tracer before SDK is initialized.
-            // SDK (Tracer) must be at least partially initialized before any collection starts to capture resources.
-            // we might be able to work this around with events.
-            this.proxy.UpdateTracer(factoryImplementation.GetTracer(null));
-
-            this.factoryImplementation = factoryImplementation;
+                this.factoryImplementation = factoryImplementation;
+            }
         }
     }
 }
