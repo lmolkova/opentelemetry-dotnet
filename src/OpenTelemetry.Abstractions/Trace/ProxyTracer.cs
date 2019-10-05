@@ -1,4 +1,4 @@
-﻿// <copyright file="NoopTracer.cs" company="OpenTelemetry Authors">
+﻿// <copyright file="ProxyTracer.cs" company="OpenTelemetry Authors">
 // Copyright 2018, OpenTelemetry Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,6 +14,8 @@
 // limitations under the License.
 // </copyright>
 
+using System.Threading;
+
 namespace OpenTelemetry.Trace
 {
     using System;
@@ -22,38 +24,49 @@ namespace OpenTelemetry.Trace
     /// <summary>
     /// No-op tracer.
     /// </summary>
-    public sealed class NoopTracer : ITracer
+    internal sealed class ProxyTracer : ITracer
     {
         /// <summary>
         /// Instance of the noop tracer.
         /// </summary>
-        public static readonly NoopTracer Instance = new NoopTracer();
+        public static readonly ProxyTracer Instance = new ProxyTracer();
 
         private static readonly IDisposable NoopScope = new NoopDisposable();
+        private readonly IBinaryFormat binaryFormat = new BinaryFormat();
+        private readonly ITextFormat textFormat = new TraceContextFormat();
 
-        internal NoopTracer()
+        private ITracer realTracer;
+
+        public void UpdateTracer(ITracer realTracer)
         {
+            if (this.realTracer != null)
+            {
+                return;
+            }
+
+            // just in case user calls init concurrently 
+            Interlocked.CompareExchange(ref this.realTracer, realTracer, null);
         }
 
         /// <inheritdoc/>
-        public ISpan CurrentSpan => BlankSpan.Instance;
+        public ISpan CurrentSpan => this.realTracer?.CurrentSpan ?? BlankSpan.Instance;
 
         /// <inheritdoc/>
-        public IBinaryFormat BinaryFormat => new BinaryFormat();
+        public IBinaryFormat BinaryFormat => this.realTracer?.BinaryFormat ?? binaryFormat;
 
         /// <inheritdoc/>
-        public ITextFormat TextFormat => new TraceContextFormat();
+        public ITextFormat TextFormat => this.realTracer?.TextFormat ?? textFormat;
 
         /// <inheritdoc/>
         public IDisposable WithSpan(ISpan span)
         {
-            return NoopScope;
+            return this.realTracer != null ? this.realTracer.WithSpan(span) : NoopScope;
         }
 
         /// <inheritdoc/>
         public ISpanBuilder SpanBuilder(string spanName)
         {
-            return new NoopSpanBuilder(spanName);
+            return this.realTracer != null ? this.realTracer.SpanBuilder(spanName) : new NoopSpanBuilder(spanName);
         }
 
         private class NoopDisposable : IDisposable

@@ -19,14 +19,37 @@ namespace OpenTelemetry.Trace
     /// <summary>
     /// Creates Tracers for an instrumentation library.
     /// </summary>
-    public abstract class TracerFactory
+    public class TracerFactory
     {
+        public static readonly TracerFactory Default = new TracerFactory();
+
+        private readonly ProxyTracer proxy = new ProxyTracer();
+        private TracerFactory factoryImplementation;
+
         /// <summary>
         /// Returns an ITracer for a given name and version.
         /// </summary>
         /// <param name="name">Name of the instrumentation library.</param>
         /// <param name="version">Version of the instrumentation library (optional).</param>
         /// <returns>Tracer for the given name and version information.</returns>
-        public abstract ITracer GetTracer(string name, string version = null);
+        public virtual ITracer GetTracer(string name, string version = null)
+        {
+            return this.factoryImplementation?.GetTracer(name, version) ?? this.proxy;
+        }
+
+        protected void Init(TracerFactory factoryImplementation)
+        {
+            // if already init - throw
+
+            // some libraries might have already used and cached ProxyTracer.
+            // let's update it to real one and forward all calls.
+
+            // resource assignment is not possible for libraries that cache tracer before SDK is initialized.
+            // SDK (Tracer) must be at least partially initialized before any collection starts to capture resources.
+            // we might be able to work this around with events.
+            this.proxy.UpdateTracer(factoryImplementation.GetTracer(null));
+
+            this.factoryImplementation = factoryImplementation;
+        }
     }
 }

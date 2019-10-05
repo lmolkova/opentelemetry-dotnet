@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Concurrent;
-using OpenTelemetry.Context.Propagation;
-using OpenTelemetry.Trace.Export;
+﻿using System.Collections.Concurrent;
 
 namespace OpenTelemetry.Trace.Configuration
 {
@@ -10,16 +7,12 @@ namespace OpenTelemetry.Trace.Configuration
         private static readonly ConcurrentDictionary<TracerRegistryKey, ITracer> Registry =
             new ConcurrentDictionary<TracerRegistryKey, ITracer>();
 
-        private TracerBuilder defaultBuilder = new TracerBuilder(); // noop
+        private readonly TracerBuilder defaultBuilder;
 
-        public TracerRegistry()
+        internal TracerRegistry(TracerBuilder tracerBuilder)
         {
-            Tracing.GlobalInit += OnGlobalInit;
-        }
-
-        private void OnGlobalInit(object _, Tracing.GlobalInitEventArgs globalInitArgs)
-        {
-            this.defaultBuilder = globalInitArgs.GlobalTracerBuilder;
+            this.defaultBuilder = tracerBuilder;
+            base.Init(this);
         }
 
         public override ITracer GetTracer(string name, string version = null)

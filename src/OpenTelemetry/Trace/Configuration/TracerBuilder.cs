@@ -34,11 +34,8 @@ namespace OpenTelemetry.Trace.Configuration
         private SpanProcessor spanProcessor;
         private IBinaryFormat binaryFormat;
         private ITextFormat textFormat;
-        private Tracer defaultTracer;
+        private Tracer tracer;
         private List<Collector> collectorFactories;
-
-        
-        private static TracerRegistry defaultRegistry;
 
         public TracerBuilder AddSampler(ISampler sampler)
         {
@@ -86,7 +83,7 @@ namespace OpenTelemetry.Trace.Configuration
 
         public ITracer Build()
         {
-            if (this.defaultTracer == null)
+            if (this.tracer == null)
             {
                 if (this.sampler == null)
                 {
@@ -117,7 +114,7 @@ namespace OpenTelemetry.Trace.Configuration
                 this.binaryFormat = new BinaryFormat();
                 this.textFormat = new TraceContextFormat();
 
-                this.defaultTracer = new Tracer(
+                this.tracer = new Tracer(
                     this.spanProcessor,
                     this.tracerConfigurationOptions,
                     this.binaryFormat,
@@ -129,8 +126,9 @@ namespace OpenTelemetry.Trace.Configuration
             {
                 foreach (var collector in this.collectorFactories)
                 {
-                    var tracer = this.registry.GetTracer(collector.Name, collector.Version);
-                    var collectorInstance = collector.Factory.Invoke(tracer);
+                    // there is only one TracerFactory in the process. Ever.
+                    var collectorTracer = TracerFactory.Default.GetTracer(collector.Name, collector.Version);
+                    var collectorInstance = collector.Factory.Invoke(collectorTracer);
 
                     if (collectorInstance is IDisposable disposableCollector)
                     {
@@ -139,7 +137,7 @@ namespace OpenTelemetry.Trace.Configuration
                 }
             }
 
-            return this.defaultTracer;
+            return this.tracer;
         }
 
         public void Dispose()

@@ -28,13 +28,13 @@ namespace OpenTelemetry.Tests.Impl.Trace
         [Fact]
         public void NoopTracer_CurrentSpan()
         {
-            Assert.Same(BlankSpan.Instance, NoopTracer.Instance.CurrentSpan);
+            Assert.Same(BlankSpan.Instance, ProxyTracer.Instance.CurrentSpan);
         }
 
         [Fact]
         public void NoopTracer_WithSpan()
         {
-            var noopScope = NoopTracer.Instance.WithSpan(BlankSpan.Instance);
+            var noopScope = ProxyTracer.Instance.WithSpan(BlankSpan.Instance);
             Assert.NotNull(noopScope);
             // does not throw
             noopScope.Dispose();
@@ -43,16 +43,16 @@ namespace OpenTelemetry.Tests.Impl.Trace
         [Fact]
         public void NoopTracer_SpanBuilder()
         {
-            Assert.IsType<NoopSpanBuilder>(NoopTracer.Instance.SpanBuilder("foo"));
+            Assert.IsType<NoopSpanBuilder>(ProxyTracer.Instance.SpanBuilder("foo"));
         }
 
         [Fact]
         public void NoopTracer_Formats()
         {
-            Assert.NotNull(NoopTracer.Instance.TextFormat);
-            Assert.NotNull(NoopTracer.Instance.BinaryFormat);
-            Assert.IsAssignableFrom<ITextFormat>(NoopTracer.Instance.TextFormat);
-            Assert.IsAssignableFrom<IBinaryFormat>(NoopTracer.Instance.BinaryFormat);
+            Assert.NotNull(ProxyTracer.Instance.TextFormat);
+            Assert.NotNull(ProxyTracer.Instance.BinaryFormat);
+            Assert.IsAssignableFrom<ITextFormat>(ProxyTracer.Instance.TextFormat);
+            Assert.IsAssignableFrom<IBinaryFormat>(ProxyTracer.Instance.BinaryFormat);
         }
     }
 }

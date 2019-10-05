@@ -36,7 +36,7 @@ namespace OpenTelemetry.Shims.OpenTracing.Tests
         [Fact]
         public void ScopeManager_NotNull()
         {
-            var shim = TracerShim.Create(NoopTracer.Instance);
+            var shim = TracerShim.Create(ProxyTracer.Instance);
 
             // Internals of the ScopeManagerShim tested elsewhere
             Assert.NotNull(shim.ScopeManager as ScopeManagerShim);
@@ -45,7 +45,7 @@ namespace OpenTelemetry.Shims.OpenTracing.Tests
         [Fact]
         public void BuildSpan_NotNull()
         {
-            var shim = TracerShim.Create(NoopTracer.Instance);
+            var shim = TracerShim.Create(ProxyTracer.Instance);
 
             // Internals of the SpanBuilderShim tested elsewhere
             Assert.NotNull(shim.BuildSpan("foo") as SpanBuilderShim);
@@ -54,7 +54,7 @@ namespace OpenTelemetry.Shims.OpenTracing.Tests
         [Fact]
         public void Inject_ArgumentValidation()
         {
-            var shim = TracerShim.Create(NoopTracer.Instance);
+            var shim = TracerShim.Create(ProxyTracer.Instance);
 
             var spanContextShim = new SpanContextShim(Defaults.GetOpenTelemetrySpanContext());
             var mockFormat = new Mock<IFormat<ITextMap>>();
@@ -69,7 +69,7 @@ namespace OpenTelemetry.Shims.OpenTracing.Tests
         [Fact]
         public void Inject_UnknownFormatIgnored()
         {
-            var shim = TracerShim.Create(NoopTracer.Instance);
+            var shim = TracerShim.Create(ProxyTracer.Instance);
 
             var spanContextShim = new SpanContextShim(Defaults.GetOpenTelemetrySpanContext());
 
@@ -84,7 +84,7 @@ namespace OpenTelemetry.Shims.OpenTracing.Tests
         [Fact]
         public void Inject_Ok()
         {
-            var shim = TracerShim.Create(NoopTracer.Instance);
+            var shim = TracerShim.Create(ProxyTracer.Instance);
 
             var spanContextShim = new SpanContextShim(Defaults.GetOpenTelemetrySpanContext());
 
@@ -98,7 +98,7 @@ namespace OpenTelemetry.Shims.OpenTracing.Tests
         [Fact]
         public void Extract_ArgumentValidation()
         {
-            var shim = TracerShim.Create(NoopTracer.Instance);
+            var shim = TracerShim.Create(ProxyTracer.Instance);
 
             Assert.Throws<ArgumentNullException>(() => shim.Extract(null, new Mock<ITextMap>().Object));
             Assert.Throws<ArgumentNullException>(() => shim.Extract(new Mock<IFormat<ITextMap>>().Object, null));
@@ -107,7 +107,7 @@ namespace OpenTelemetry.Shims.OpenTracing.Tests
         [Fact]
         public void Extract_UnknownFormatIgnored()
         {
-            var shim = TracerShim.Create(NoopTracer.Instance);
+            var shim = TracerShim.Create(ProxyTracer.Instance);
 
             var spanContextShim = new SpanContextShim(Defaults.GetOpenTelemetrySpanContext());
 
@@ -122,11 +122,11 @@ namespace OpenTelemetry.Shims.OpenTracing.Tests
         [Fact]
         public void Extract_InvalidTraceParent()
         {
-            var shim = TracerShim.Create(NoopTracer.Instance);
+            var shim = TracerShim.Create(ProxyTracer.Instance);
 
             var mockCarrier = new Mock<ITextMap>();
 
-            // The NoopTracer uses OpenTelemetry.Context.Propagation.TraceContextFormat, so we need to satisfy the traceparent key at the least
+            // The ProxyTracer uses OpenTelemetry.Context.Propagation.TraceContextFormat, so we need to satisfy the traceparent key at the least
             var carrierMap = new Dictionary<string, string>
             {
                 // This is an invalid traceparent value
@@ -145,11 +145,11 @@ namespace OpenTelemetry.Shims.OpenTracing.Tests
         [Fact]
         public void Extract_Ok()
         {
-            var shim = TracerShim.Create(NoopTracer.Instance);
+            var shim = TracerShim.Create(ProxyTracer.Instance);
 
             var mockCarrier = new Mock<ITextMap>();
 
-            // The NoopTracer uses OpenTelemetry.Context.Propagation.TraceContextFormat, so we need to satisfy that.
+            // The ProxyTracer uses OpenTelemetry.Context.Propagation.TraceContextFormat, so we need to satisfy that.
             var traceContextFormat = new TraceContextFormat();
             var spanContext = Defaults.GetOpenTelemetrySpanContext();
 

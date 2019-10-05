@@ -56,9 +56,10 @@ namespace Samples
 
             var tagContextBuilder = Tagger.CurrentBuilder.Put(FrontendKey, TagValue.Create("mobile-ios9.3.5"));
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-            var tracerFactory = new TracerFactorySdk(new BatchingSpanProcessor(exporter));
+            var tracerFactory = new TracerRegistry().TracerBuilder
+                .AddApplicationInsights(config)
+                
+
             var tracer = tracerFactory.GetTracer(string.Empty);
             var spanBuilder = tracer
                 .SpanBuilder("incoming request")
