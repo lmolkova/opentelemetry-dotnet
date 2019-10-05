@@ -57,8 +57,9 @@ namespace OpenTelemetry.Collector.AspNetCore.Tests
         public async Task SuccessfulTemplateControllerCallGeneratesASpan()
         {
             var spanProcessor = new Mock<SpanProcessor>(new NoopSpanExporter());
-            var tracerFactory = new TracerBuilder()
-                .AddProcessor(_ => spanProcessor.Object);
+            var tracer = new TracerBuilder()
+                .AddProcessor(_ => spanProcessor.Object)
+                .Build();
 
             // Arrange
             using (var client = this.factory
@@ -66,7 +67,7 @@ namespace OpenTelemetry.Collector.AspNetCore.Tests
                     builder.ConfigureTestServices((IServiceCollection services) =>
                     {
                         services.AddSingleton<CallbackMiddleware.CallbackMiddlewareImpl>(new TestCallbackMiddlewareImpl());
-                        services.AddSingleton<ITracer>(tracerFactory.GetTracer(null));
+                        services.AddSingleton<ITracer>(tracer);
                     }))
                 .CreateClient())
             {

@@ -17,18 +17,14 @@
 namespace OpenTelemetry.Trace.Configuration
 {
     using System;
-    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using OpenTelemetry.Context.Propagation;
     using OpenTelemetry.Resources;
     using OpenTelemetry.Trace.Export;
     using OpenTelemetry.Trace.Sampler;
 
-    public class TracerBuilder : TracerFactory, IDisposable
+    public class TracerBuilder : IDisposable
     {
-        private static readonly ConcurrentDictionary<TracerRegistryKey, ITracer> TracerRegistry =
-            new ConcurrentDictionary<TracerRegistryKey, ITracer>();
-
         private readonly List<IDisposable> disposables = new List<IDisposable>();
 
         private TracerConfigurationOptions tracerConfigurationOptions;
@@ -40,6 +36,9 @@ namespace OpenTelemetry.Trace.Configuration
         private ITextFormat textFormat;
         private Tracer defaultTracer;
         private List<Collector> collectorFactories;
+
+        
+        private static TracerRegistry defaultRegistry;
 
         public TracerBuilder AddSampler(ISampler sampler)
         {
@@ -55,11 +54,6 @@ namespace OpenTelemetry.Trace.Configuration
 
         public TracerBuilder AddProcessor(Func<SpanExporter, SpanProcessor> processorFactory)
         {
-            if (this.spanProcessor != null)
-            {
-                throw new ArgumentException("TODO");
-            }
-
             this.processorFactory = processorFactory;
             return this;
         }
@@ -135,7 +129,7 @@ namespace OpenTelemetry.Trace.Configuration
             {
                 foreach (var collector in this.collectorFactories)
                 {
-                    var tracer = this.GetTracer(collector.Name, collector.Version);
+                    var tracer = this.registry.GetTracer(collector.Name, collector.Version);
                     var collectorInstance = collector.Factory.Invoke(tracer);
 
                     if (collectorInstance is IDisposable disposableCollector)
@@ -148,17 +142,6 @@ namespace OpenTelemetry.Trace.Configuration
             return this.defaultTracer;
         }
 
-        public override ITracer GetTracer(string name, string version = null)
-        {
-            if (string.IsNullOrWhiteSpace(name))
-            {
-                return this.Build();
-            }
-
-            var key = new TracerRegistryKey(name, version);
-            return TracerRegistry.GetOrAdd(key, k => this.Build(k.CreateResource()));
-        }
-
         public void Dispose()
         {
             foreach (var disposable in this.disposables)
@@ -167,42 +150,25 @@ namespace OpenTelemetry.Trace.Configuration
             }
         }
 
-        private ITracer Build(Resource resource)
+        internal ITracer Build(string name, string version)
         {
             return new Tracer(
                 this.spanProcessor,
                 this.tracerConfigurationOptions,
                 this.binaryFormat,
                 this.textFormat,
-                resource);
+                new Resource(CreateLibraryResourceLabels(name, version)));
         }
 
-        private struct TracerRegistryKey
+        private static IEnumerable<KeyValuePair<string, string>> CreateLibraryResourceLabels(string name, string version)
         {
-            private readonly string name;
-            private readonly string version;
-
-            internal TracerRegistryKey(string name, string version)
+            var labels = new Dictionary<string, string> { { "name", name } };
+            if (!string.IsNullOrEmpty(version))
             {
-                this.name = name;
-                this.version = version;
+                labels.Add("version", version);
             }
 
-            internal Resource CreateResource()
-            {
-                return new Resource(CreateLibraryResourceLabels(this.name, this.version));
-            }
-
-            private static IEnumerable<KeyValuePair<string, string>> CreateLibraryResourceLabels(string name, string version)
-            {
-                var labels = new Dictionary<string, string> { { "name", name } };
-                if (!string.IsNullOrEmpty(version))
-                {
-                    labels.Add("version", version);
-                }
-
-                return labels;
-            }
+            return labels;
         }
 
         private struct Collector

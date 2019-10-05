@@ -14,6 +14,8 @@
 // limitations under the License.
 // </copyright>
 
+using System;
+
 namespace OpenTelemetry.Trace
 {
     using OpenTelemetry.Trace.Configuration;
@@ -23,14 +25,38 @@ namespace OpenTelemetry.Trace
     /// </summary>
     public static class Tracing
     {
-        static Tracing()
+        public static event EventHandler<GlobalInitEventArgs> GlobalInit;
+
+        public static TracerFactory TracerFactory { get; private set; }
+
+        public static void Init(TracerBuilder builder)
         {
-            TracerFactory = new TracerBuilder();
+            // if already init - throw
+            globalTracerBuilder = builder;
+
+            // Make a temporary copy of the event to avoid possibility of
+            // a race condition if the last subscriber unsubscribes
+            // immediately after the null check and before the event is rais
+            var eventHandler = GlobalInit;
+
+            // Event will be null if there are no subscribers
+            if (eventHandler != null)
+            {
+                var eventArgs = new GlobalInitEventArgs(builder);
+                eventHandler(null, eventArgs);
+            }
         }
 
-        /// <summary>   
-        /// Gets the tracer to record spans.
-        /// </summary>
-        public static TracerFactory TracerFactory { get; }
+        private static TracerBuilder globalTracerBuilder;
+
+        public class GlobalInitEventArgs : EventArgs
+        {
+            public GlobalInitEventArgs(TracerBuilder globalTracerBuilder)
+            {
+                this.GlobalTracerBuilder = globalTracerBuilder;
+            }
+
+            public TracerBuilder GlobalTracerBuilder { get; private set; }
+        }
     }
 }

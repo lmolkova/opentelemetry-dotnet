@@ -22,7 +22,7 @@ namespace OpenTelemetry.Trace.Test
 
     public class TracerFactorySdkTest
     {
-        private readonly TracerFactory tracerFactory = new TracerBuilder();
+        private readonly TracerFactory tracerFactory = new TracerRegistry();
         
         [Fact]
         public void GetTracer_NoName_NoVersion()
