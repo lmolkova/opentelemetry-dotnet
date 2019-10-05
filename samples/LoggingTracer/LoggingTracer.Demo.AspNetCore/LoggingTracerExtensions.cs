@@ -15,7 +15,7 @@ namespace LoggingTracer.Demo.AspNetCore
     {
         internal static void AddLoggingTracer(this IServiceCollection services)
         {
-            services.AddSingleton<TracerFactory, LoggingTracerFactory>();
+            services.AddSingleton<TracerFactoryBase, LoggingTracerFactory>();
 
             services.AddSingleton(Samplers.AlwaysSample);
             services.AddSingleton<AspNetCoreCollectorOptions>();

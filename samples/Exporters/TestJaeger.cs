@@ -30,7 +30,7 @@ namespace Samples
             // Configure exporter to export traces to Jaeger
             var jaegerOptions = new JaegerExporterOptions()
             {
-                ServiceName = "tracing-to-jaeger-service",
+                ServiceName = "jaeger-test",
                 AgentHost = host,
                 AgentPort = port,
             };
@@ -39,11 +39,10 @@ namespace Samples
                 jaegerOptions);
 
             // Create a tracer. 
-            using (var tracerBuilder = new TracerBuilder())
+            using (var tracerBuilder = new TracerFactory()
+                .SetExporter(exporter))
             {
-                var tracer = tracerBuilder
-                    .SetExporter(exporter)
-                    .Build();
+                var tracer = tracerBuilder.GetTracer("jaeger-test");
 
                 // Create a scoped span. It will end automatically when using statement ends
                 using (tracer.WithSpan(tracer.SpanBuilder("Main").StartSpan()))

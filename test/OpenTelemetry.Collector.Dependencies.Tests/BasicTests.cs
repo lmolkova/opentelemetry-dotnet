@@ -51,9 +51,9 @@ namespace OpenTelemetry.Collector.Dependencies.Tests
         public async Task HttpDependenciesCollectorInjectsHeadersAsync()
         {
             var spanProcessor = new Mock<SpanProcessor>(new NoopSpanExporter());
-            var tracer = new TracerBuilder()
+            var tracer = new TracerFactory()
                 .SetProcessor(_ => spanProcessor.Object)
-                .Build();
+                .GetTracer(null);
 
             var request = new HttpRequestMessage
             {
@@ -93,9 +93,9 @@ namespace OpenTelemetry.Collector.Dependencies.Tests
         public async Task HttpDependenciesCollectorBacksOffIfAlreadyInstrumented()
         {
             var spanProcessor = new Mock<SpanProcessor>(new NoopSpanExporter());
-            var tracer = new TracerBuilder()
+            var tracer = new TracerFactory()
                 .SetProcessor(_ => spanProcessor.Object)
-                .Build();
+                .GetTracer(null);
 
             var request = new HttpRequestMessage
             {
@@ -118,9 +118,9 @@ namespace OpenTelemetry.Collector.Dependencies.Tests
         public async Task HttpDependenciesCollectorFiltersOutRequests()
         {
             var spanProcessor = new Mock<SpanProcessor>(new NoopSpanExporter());
-            var tracer = new TracerBuilder()
+            var tracer = new TracerFactory()
                 .SetProcessor(_ => spanProcessor.Object)
-                .Build();
+                .GetTracer(null);
 
             var options = new HttpClientCollectorOptions((activityName, arg1, _) => !(activityName == "System.Net.Http.HttpRequestOut" &&
                                                                                         arg1 is HttpRequestMessage request &&
@@ -140,9 +140,9 @@ namespace OpenTelemetry.Collector.Dependencies.Tests
         public async Task HttpDependenciesCollectorFiltersOutRequestsToExporterEndpoints()
         {
             var spanProcessor = new Mock<SpanProcessor>(new NoopSpanExporter());
-            var tracer = new TracerBuilder()
+            var tracer = new TracerFactory()
                 .SetProcessor(_ => spanProcessor.Object)
-                .Build();
+                .GetTracer(null);
 
             var options = new HttpClientCollectorOptions();
 

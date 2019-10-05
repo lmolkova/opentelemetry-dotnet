@@ -55,11 +55,10 @@ namespace Samples
                 Stats.ViewManager);
             metricExporter.Start();
 
-            using (var tracerBuilder = new TracerBuilder())
+            using (var tracerBuilder = new TracerFactory()
+                .SetExporter(spanExporter))
             {
-                var tracer = tracerBuilder
-                    .SetExporter(spanExporter)
-                    .Build();
+                var tracer = tracerBuilder.GetTracer("stackdriver-test");
 
                 var tagContextBuilder = Tagger.CurrentBuilder.Put(FrontendKey, TagValue.Create("mobile-ios9.3.5"));
 

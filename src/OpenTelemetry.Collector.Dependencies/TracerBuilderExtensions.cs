@@ -20,12 +20,12 @@ namespace OpenTelemetry.Collector.Dependencies
 
     public static class TracerBuilderExtensions
     {
-        public static TracerBuilder AddDependencyCollector(this TracerBuilder builder, HttpClientCollectorOptions options)
+        public static TracerFactory AddDependencyCollector(this TracerFactory factory, HttpClientCollectorOptions options)
         {
-            builder.AddCollector((t) => new AzureClientsCollector(t));
-            builder.AddCollector((t) => new AzurePipelineCollector(t));
-            builder.AddCollector((t) => new HttpClientCollector(options, t));
-            return builder;
+            factory.AddCollector((t) => new AzureClientsCollector(t));
+            factory.AddCollector((t) => new AzurePipelineCollector(t));
+            factory.AddCollector((t) => new HttpClientCollector(options, t));
+            return factory;
         }
     }
 }

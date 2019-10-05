@@ -92,9 +92,9 @@ namespace OpenTelemetry.Collector.Dependencies.Tests
                 out var port);
 
             var spanProcessor = new Mock<SpanProcessor>(new NoopSpanExporter());
-            var tracer = new TracerBuilder()
+            var tracer = new TracerFactory()
                 .SetProcessor(_ => spanProcessor.Object)
-                .Build();
+                .GetTracer(null);
             tc.url = NormalizeValues(tc.url, host, port);
 
             using (serverLifeTime)

@@ -56,7 +56,7 @@ namespace OpenTelemetry.Exporter.ApplicationInsights.Tests
         public ApplicationInsightsTraceExporterTests()
         {
             now = DateTime.UtcNow.AddSeconds(-1);
-            tracer = new TracerBuilder().Build();
+            tracer = new TracerFactory().GetTracer(null);
         }
 
         private ConcurrentQueue<ITelemetry> ConvertSpan(Span otSpan)

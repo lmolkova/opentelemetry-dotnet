@@ -21,9 +21,9 @@ namespace OpenTelemetry.Exporter.ApplicationInsights
 
     public static class TracerBuilderExtensions
     {
-        public static TracerBuilder UseApplicationInsights(this TracerBuilder builder, TelemetryConfiguration configuration)
+        public static TracerFactory UseApplicationInsights(this TracerFactory factory, TelemetryConfiguration configuration)
         {
-            return builder.SetExporter(new ApplicationInsightsTraceExporter(configuration));
+            return factory.SetExporter(new ApplicationInsightsTraceExporter(configuration));
         }
     }
 }

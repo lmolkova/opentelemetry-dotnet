@@ -21,16 +21,16 @@ namespace OpenTelemetry.Exporter.Zipkin
 
     public static class TracerBuilderExtensions
     {
-        public static TracerBuilder UseZipkin(this TracerBuilder builder, ZipkinTraceExporterOptions options)
+        public static TracerFactory UseZipkin(this TracerFactory factory, ZipkinTraceExporterOptions options)
         {
-            return builder.SetExporter(new ZipkinTraceExporter(options));
+            return factory.SetExporter(new ZipkinTraceExporter(options));
         }
 
-        public static TracerBuilder UseZipkin(this TracerBuilder builder, Action<ZipkinTraceExporterOptions> configureOptions)
+        public static TracerFactory UseZipkin(this TracerFactory factory, Action<ZipkinTraceExporterOptions> configureOptions)
         {
             var options = new ZipkinTraceExporterOptions();
             configureOptions(options);
-            return builder.SetExporter(new ZipkinTraceExporter(options));
+            return factory.SetExporter(new ZipkinTraceExporter(options));
         }
     }
 }

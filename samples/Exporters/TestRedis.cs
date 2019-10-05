@@ -33,21 +33,20 @@ namespace Samples
             var connection = ConnectionMultiplexer.Connect("localhost:6379");
 
             // Configure exporter to export traces to Zipkin
-            using (var tracerBuilder = new TracerBuilder())
+            using (var tracerBuilder = new TracerFactory()
+                .UseZipkin(o =>
+                {
+                    o.ServiceName = "redis-test";
+                    o.Endpoint = new Uri(zipkinUri);
+                })
+                .AddCollector(t =>
+                {
+                    var collector = new StackExchangeRedisCallsCollector(t);
+                    connection.RegisterProfiler(collector.GetProfilerSessionsFactory());
+                    return collector;
+                }))
             {
-                var tracer = tracerBuilder
-                    .UseZipkin(o =>
-                    {
-                        o.ServiceName = "test-zipkin";
-                        o.Endpoint = new Uri(zipkinUri);
-                    })
-                    .AddCollector(t =>
-                    {
-                        var collector = new StackExchangeRedisCallsCollector(t);
-                        connection.RegisterProfiler(collector.GetProfilerSessionsFactory());
-                        return collector;
-                    })
-                    .Build();
+                var tracer = tracerBuilder.GetTracer("redis-test");
 
                 // select a database (by default, DB = 0)
                 var db = connection.GetDatabase();

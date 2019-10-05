@@ -37,7 +37,7 @@ namespace OpenTelemetry.Exporter.Jaeger.Tests.Implementation
 
         public JaegerThriftIntegrationTest()
         {
-            tracer = new TracerBuilder().Build();
+            tracer = new TracerFactory().GetTracer(null);
         }
 
         [Fact]

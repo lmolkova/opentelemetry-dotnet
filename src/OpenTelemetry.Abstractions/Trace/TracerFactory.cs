@@ -19,12 +19,12 @@ namespace OpenTelemetry.Trace
     /// <summary>
     /// Creates Tracers for an instrumentation library.
     /// </summary>
-    public class TracerFactory
+    public class TracerFactoryBase
     {
-        public static readonly TracerFactory Default = new TracerFactory();
+        public static readonly TracerFactoryBase Default = new TracerFactoryBase();
 
         private readonly ProxyTracer proxy = new ProxyTracer();
-        private TracerFactory factoryImplementation;
+        private TracerFactoryBase factoryImplementation;
 
         /// <summary>
         /// Returns an ITracer for a given name and version.
@@ -37,7 +37,7 @@ namespace OpenTelemetry.Trace
             return this.factoryImplementation?.GetTracer(name, version) ?? this.proxy;
         }
 
-        protected void Init(TracerFactory factoryImplementation)
+        protected void Init(TracerFactoryBase factoryImplementation)
         {
             // if already init - throw
             if (this.factoryImplementation == null)

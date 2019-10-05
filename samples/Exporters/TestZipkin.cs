@@ -28,15 +28,14 @@ namespace Samples
         internal static object Run(string zipkinUri)
         {
             // Configure exporter to export traces to Zipkin
-            using (var tracerBuilder = new TracerBuilder())
+            using (var tracerBuilder = new TracerFactory()
+                .UseZipkin(o =>
+                {
+                    o.ServiceName = "test-zipkin";
+                    o.Endpoint = new Uri(zipkinUri);
+                }))
             {
-                var tracer = tracerBuilder
-                    .UseZipkin(o =>
-                    {
-                        o.ServiceName = "test-zipkin";
-                        o.Endpoint = new Uri(zipkinUri);
-                    })
-                    .Build();
+                var tracer = tracerBuilder.GetTracer("zipkin-test");
 
                 // Create a scoped span. It will end automatically when using statement ends
                 using (tracer.WithSpan(tracer.SpanBuilder("Main").StartSpan()))

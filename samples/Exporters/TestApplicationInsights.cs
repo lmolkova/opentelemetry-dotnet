@@ -59,21 +59,17 @@ namespace Samples
 
             var tagContextBuilder = Tagger.CurrentBuilder.Put(FrontendKey, TagValue.Create("mobile-ios9.3.5"));
 
-            using (var tracerBuilder = new TracerBuilder())
+            using (var tracerBuilder = new TracerFactory().UseApplicationInsights(config))
             {
-                var tracer = tracerBuilder.UseApplicationInsights(config)
-                    .Build();
+                var tracer = tracerBuilder.GetTracer("application-insights-test");
 
-                var spanBuilder = tracer
-                    .SpanBuilder("incoming request")
-                    .SetRecordEvents(true)
-                    .SetSampler(Samplers.AlwaysSample);
+                var span = tracer.SpanBuilder("incoming request").StartSpan();
 
                 Stats.ViewManager.RegisterView(VideoSizeView);
 
                 using (tagContextBuilder.BuildScoped())
                 {
-                    using (tracer.WithSpan(spanBuilder.StartSpan()))
+                    using (tracer.WithSpan(span))
                     {
                         tracer.CurrentSpan.AddEvent("Start processing video.");
                         Thread.Sleep(TimeSpan.FromMilliseconds(10));

@@ -19,15 +19,14 @@ namespace Samples
                 new LightStepTraceExporterOptions
                 {
                     AccessToken = accessToken,
-                    ServiceName = "tracing-to-lightstep-service",
+                    ServiceName = "lightstep-test",
                 });
 
             // Create a tracer. 
-            using (var tracerBuilder = new TracerBuilder())
+            using (var tracerBuilder = new TracerFactory()
+                .SetExporter(exporter))
             {
-                var tracer = tracerBuilder
-                    .SetExporter(exporter)
-                    .Build();
+                var tracer = tracerBuilder.GetTracer("lightstep-test");
                 using (tracer.WithSpan(tracer.SpanBuilder("Main").StartSpan()))
                 {
                     tracer.CurrentSpan.SetAttribute("custom-attribute", 55);
