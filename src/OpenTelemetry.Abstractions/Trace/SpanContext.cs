@@ -20,11 +20,11 @@ using System.Linq;
 namespace OpenTelemetry.Trace
 {
     /// <summary>
-    /// A class that represents a span context. A span context contains the state that must propagate to
+    /// A struct that represents a span context. A span context contains the state that must propagate to
     /// child <see cref="ISpan"/> and across process boundaries. It contains the identifiers <see cref="ActivityTraceId"/>
     /// and <see cref="ActivitySpanId"/> associated with the <see cref="ISpan"/> and a set of <see cref="TraceOptions"/>.
     /// </summary>
-    public sealed class SpanContext
+    public readonly struct SpanContext
     {
         /// <summary>
         /// A blank <see cref="SpanContext"/> that can be used for no-op operations.
@@ -32,7 +32,7 @@ namespace OpenTelemetry.Trace
         public static readonly SpanContext Blank = new SpanContext(default, default, ActivityTraceFlags.None);
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SpanContext"/> class with the given identifiers and options.
+        /// Initializes a new instance of the <see cref="SpanContext"/> struct with the given identifiers and options.
         /// </summary>
         /// <param name="traceId">The <see cref="ActivityTraceId"/> to associate with the <see cref="SpanContext"/>.</param>
         /// <param name="spanId">The <see cref="ActivitySpanId"/> to associate with the <see cref="SpanContext"/>.</param>
@@ -71,6 +71,22 @@ namespace OpenTelemetry.Trace
         /// </summary>
         public IEnumerable<KeyValuePair<string, string>> Tracestate { get; }
 
+        public static bool operator ==(SpanContext context1, SpanContext context2)
+        {
+            return context1.TraceId == context2.TraceId
+                   && context1.SpanId == context2.SpanId
+                   && context1.TraceOptions == context2.TraceOptions
+                   && context1.Tracestate.Equals(context2.Tracestate);
+        }
+
+        public static bool operator !=(SpanContext context1, SpanContext context2)
+        {
+            return context1.TraceId != context2.TraceId
+                   || context1.SpanId != context2.SpanId
+                   || context1.TraceOptions != context2.TraceOptions
+                   || !context1.Tracestate.Equals(context2.Tracestate);
+        }
+
         /// <inheritdoc/>
         public override int GetHashCode()
         {
@@ -85,21 +101,13 @@ namespace OpenTelemetry.Trace
         /// <inheritdoc/>
         public override bool Equals(object obj)
         {
-            if (obj == this)
-            {
-                return true;
-            }
-
             if (!(obj is SpanContext))
             {
                 return false;
             }
 
             var that = (SpanContext)obj;
-            return this.TraceId.Equals(that.TraceId)
-                   && this.SpanId.Equals(that.SpanId)
-                   && this.TraceOptions.Equals(that.TraceOptions)
-                   && this.Tracestate.Equals(that.Tracestate);
+            return this == that;
         }
 
         private bool IsTraceIdValid(ActivityTraceId traceId)

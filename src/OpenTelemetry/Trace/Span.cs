@@ -504,7 +504,7 @@ namespace OpenTelemetry.Trace
 
             // Use the default sampler if this is a root Span or this is an entry point Span (has remote
             // parent).
-            if (parent == null || !parent.IsValid)
+            if (!parent.IsValid)
             {
                 return tracerConfiguration
                     .Sampler
@@ -572,7 +572,7 @@ namespace OpenTelemetry.Trace
             var activity = new Activity(spanName);
 
             IEnumerable<KeyValuePair<string, string>> tracestate = null;
-            if (parentContext != null && parentContext.IsValid)
+            if (parentContext.IsValid)
             {
                 activity.SetParentId(parentContext.TraceId,
                     parentContext.SpanId,
@@ -632,7 +632,7 @@ namespace OpenTelemetry.Trace
                     activity.ActivityTraceFlags);
             }
 
-            return null;
+            return default;
         }
 
         private readonly struct ActivityAndTracestate
