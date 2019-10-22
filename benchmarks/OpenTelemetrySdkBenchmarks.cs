@@ -15,6 +15,9 @@
 // </copyright>
 
 using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Configs;
+using BenchmarkDotNet.Diagnostics.Windows;
+using BenchmarkDotNet.Diagnostics.Windows.Configs;
 using BenchmarkDotNet.Running;
 using Benchmarks.Tracing;
 using OpenTelemetry.Trace;
@@ -23,6 +26,7 @@ using OpenTelemetry.Trace.Sampler;
 
 namespace Benchmarks
 {
+    [EtwProfiler(performExtraBenchmarksRun:false)]
     [MemoryDiagnoser]
     public class OpenTelemetrySdkBenchmarks
     {
@@ -45,7 +49,11 @@ namespace Benchmarks
 
         public static void Main(string[] args)
         {
-            var summary = BenchmarkRunner.Run<OpenTelemetrySdkBenchmarks>();
+            //var summary = BenchmarkRunner.Run<OpenTelemetrySdkBenchmarks>();
+            BenchmarkSwitcher
+                .FromAssembly(typeof(OpenTelemetrySdkBenchmarks).Assembly)
+                .Run(args, DefaultConfig.Instance
+                    .With(new EtwProfiler()));
         }
 
         [Benchmark]
