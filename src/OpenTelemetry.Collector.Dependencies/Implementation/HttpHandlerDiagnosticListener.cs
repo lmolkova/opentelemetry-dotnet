@@ -67,8 +67,6 @@ namespace OpenTelemetry.Collector.Dependencies.Implementation
 
             var span = this.Tracer.StartSpanFromActivity(request.RequestUri.AbsolutePath, Activity.Current, SpanKind.Client);
 
-            this.Tracer.WithSpan(span);
-
             if (span.IsRecording)
             {
                 span.PutHttpMethodAttribute(request.Method.ToString());
@@ -98,7 +96,7 @@ namespace OpenTelemetry.Collector.Dependencies.Implementation
 
             if (!span.IsRecording)
             {
-                span.End();
+                this.DisposeOrEndSpan(span);
                 return;
             }
 
@@ -126,7 +124,7 @@ namespace OpenTelemetry.Collector.Dependencies.Implementation
 
             span.PutHttpStatusCode((int)response.StatusCode, response.ReasonPhrase);
 
-            span.End();
+            this.DisposeOrEndSpan(span);
         }
 
         public override void OnException(Activity activity, object payload)
@@ -164,6 +162,18 @@ namespace OpenTelemetry.Collector.Dependencies.Implementation
                 {
                     span.Status = Status.Unknown.WithDescription(exc.Message);
                 }
+            }
+        }
+
+        private void DisposeOrEndSpan(ISpan span)
+        {
+            if (span is IDisposable disposableSpan)
+            {
+                disposableSpan.Dispose();
+            }
+            else
+            {
+                span.End();
             }
         }
     }

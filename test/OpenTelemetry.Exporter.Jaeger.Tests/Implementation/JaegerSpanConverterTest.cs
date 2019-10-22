@@ -365,7 +365,7 @@ namespace OpenTelemetry.Exporter.Jaeger.Tests.Implementation
             }
 
             var span = (Span)tracer
-                .StartSpan("Name", new SpanContext(traceId, parentSpanId, ActivityTraceFlags.Recorded), SpanKind.Client, startTimestamp.Date, linkGetter);
+                .StartSpan("Name", new SpanContext(traceId, parentSpanId, ActivityTraceFlags.Recorded), SpanKind.Client, startTimestamp.Date, linkGetter, false);
 
             if (setAttributes)
             {

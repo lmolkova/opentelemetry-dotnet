@@ -23,18 +23,29 @@ namespace OpenTelemetry.Trace
     public static class TracerExtensions
     {
         /// <summary>
-        /// Creates root span.
+        /// Starts root span.
         /// </summary>
         /// <param name="tracer">Tracer instance.</param>
         /// <param name="operationName">Span name.</param>
         /// <returns>Span instance.</returns>
         public static ISpan StartRootSpan(this ITracer tracer, string operationName)
         {
-            return tracer.StartRootSpan(operationName, SpanKind.Internal, default, null as Func<IEnumerable<Link>>);
+            return tracer.StartRootSpan(operationName, SpanKind.Internal, default, null as Func<IEnumerable<Link>>, false);
         }
 
         /// <summary>
-        /// Creates root span.
+        /// Starts and activates root span.
+        /// </summary>
+        /// <param name="tracer">Tracer instance.</param>
+        /// <param name="operationName">Span name.</param>
+        /// <returns>Span instance.</returns>
+        public static ISpan StartActiveRootSpan(this ITracer tracer, string operationName)
+        {
+            return tracer.StartRootSpan(operationName, SpanKind.Internal, default, null as Func<IEnumerable<Link>>, true);
+        }
+
+        /// <summary>
+        /// Starts root span.
         /// </summary>
         /// <param name="tracer">Tracer instance.</param>
         /// <param name="operationName">Span name.</param>
@@ -42,11 +53,23 @@ namespace OpenTelemetry.Trace
         /// <returns>Span instance.</returns>
         public static ISpan StartRootSpan(this ITracer tracer, string operationName, SpanKind kind)
         {
-            return tracer.StartRootSpan(operationName, kind, default, null as Func<IEnumerable<Link>>);
+            return tracer.StartRootSpan(operationName, kind, default, null as Func<IEnumerable<Link>>, false);
         }
 
         /// <summary>
-        /// Creates root span.
+        /// Starts and activates root span.
+        /// </summary>
+        /// <param name="tracer">Tracer instance.</param>
+        /// <param name="operationName">Span name.</param>
+        /// <param name="kind">Kind.</param>
+        /// <returns>Span instance.</returns>
+        public static ISpan StartActiveRootSpan(this ITracer tracer, string operationName, SpanKind kind)
+        {
+            return tracer.StartRootSpan(operationName, kind, default, null as Func<IEnumerable<Link>>, true);
+        }
+
+        /// <summary>
+        /// Starts and activates root span.
         /// </summary>
         /// <param name="tracer">Tracer instance.</param>
         /// <param name="operationName">Span name.</param>
@@ -55,7 +78,20 @@ namespace OpenTelemetry.Trace
         /// <returns>Span instance.</returns>
         public static ISpan StartRootSpan(this ITracer tracer, string operationName, SpanKind kind, DateTimeOffset startTimestamp)
         {
-            return tracer.StartRootSpan(operationName, kind, startTimestamp, null as Func<IEnumerable<Link>>);
+            return tracer.StartRootSpan(operationName, kind, startTimestamp, null as Func<IEnumerable<Link>>, false);
+        }
+
+        /// <summary>
+        /// Starts root span.
+        /// </summary>
+        /// <param name="tracer">Tracer instance.</param>
+        /// <param name="operationName">Span name.</param>
+        /// <param name="kind">Kind.</param>
+        /// <param name="startTimestamp">Start timestamp.</param>
+        /// <returns>Span instance.</returns>
+        public static ISpan StartActiveRootSpan(this ITracer tracer, string operationName, SpanKind kind, DateTimeOffset startTimestamp)
+        {
+            return tracer.StartRootSpan(operationName, kind, startTimestamp, null as Func<IEnumerable<Link>>, true);
         }
 
         /// <summary>
@@ -66,11 +102,22 @@ namespace OpenTelemetry.Trace
         /// <returns>Span instance.</returns>
         public static ISpan StartSpan(this ITracer tracer, string operationName)
         {
-            return tracer.StartSpan(operationName, SpanKind.Internal, default, null as Func<IEnumerable<Link>>);
+            return tracer.StartSpan(operationName, SpanKind.Internal, default, null as Func<IEnumerable<Link>>, false);
         }
 
         /// <summary>
-        /// Creates span. If there is active current span, it becomes a parent for returned span.
+        /// Starts and activates span. If there is active current span, it becomes a parent for returned span.
+        /// </summary>
+        /// <param name="tracer">Tracer instance.</param>
+        /// <param name="operationName">Span name.</param>
+        /// <returns>Span instance.</returns>
+        public static ISpan StartActiveSpan(this ITracer tracer, string operationName)
+        {
+            return tracer.StartSpan(operationName, SpanKind.Internal, default, null as Func<IEnumerable<Link>>, true);
+        }
+
+        /// <summary>
+        /// Starts span. If there is active current span, it becomes a parent for returned span.
         /// </summary>
         /// <param name="tracer">Tracer instance.</param>
         /// <param name="operationName">Span name.</param>
@@ -78,11 +125,23 @@ namespace OpenTelemetry.Trace
         /// <returns>Span instance.</returns>
         public static ISpan StartSpan(this ITracer tracer, string operationName, SpanKind kind)
         {
-            return tracer.StartSpan(operationName, kind, default, null as Func<IEnumerable<Link>>);
+            return tracer.StartSpan(operationName, kind, default, null as Func<IEnumerable<Link>>, false);
         }
 
         /// <summary>
-        /// Creates span. If there is active current span, it becomes a parent for returned span.
+        /// Starts and activates span. If there is active current span, it becomes a parent for returned span.
+        /// </summary>
+        /// <param name="tracer">Tracer instance.</param>
+        /// <param name="operationName">Span name.</param>
+        /// <param name="kind">Kind.</param>
+        /// <returns>Span instance.</returns>
+        public static ISpan StartActiveSpan(this ITracer tracer, string operationName, SpanKind kind)
+        {
+            return tracer.StartSpan(operationName, kind, default, null as Func<IEnumerable<Link>>, true);
+        }
+
+        /// <summary>
+        /// Starts span. If there is active current span, it becomes a parent for returned span.
         /// </summary>
         /// <param name="tracer">Tracer instance.</param>
         /// <param name="operationName">Span name.</param>
@@ -91,11 +150,24 @@ namespace OpenTelemetry.Trace
         /// <returns>Span instance.</returns>
         public static ISpan StartSpan(this ITracer tracer, string operationName, SpanKind kind, DateTimeOffset startTimestamp)
         {
-            return tracer.StartSpan(operationName, kind, startTimestamp, null as Func<IEnumerable<Link>>);
+            return tracer.StartSpan(operationName, kind, startTimestamp, null as Func<IEnumerable<Link>>, false);
         }
 
         /// <summary>
-        /// Creates span.
+        /// Starts and activates span. If there is active current span, it becomes a parent for returned span.
+        /// </summary>
+        /// <param name="tracer">Tracer instance.</param>
+        /// <param name="operationName">Span name.</param>
+        /// <param name="kind">Kind.</param>
+        /// <param name="startTimestamp">Start timestamp.</param>
+        /// <returns>Span instance.</returns>
+        public static ISpan StartActiveSpan(this ITracer tracer, string operationName, SpanKind kind, DateTimeOffset startTimestamp)
+        {
+            return tracer.StartSpan(operationName, kind, startTimestamp, null as Func<IEnumerable<Link>>, true);
+        }
+
+        /// <summary>
+        /// Starts span.
         /// </summary>
         /// <param name="tracer">Tracer instance.</param>
         /// <param name="operationName">Span name.</param>
@@ -103,11 +175,23 @@ namespace OpenTelemetry.Trace
         /// <returns>Span instance.</returns>
         public static ISpan StartSpan(this ITracer tracer, string operationName, ISpan parent)
         {
-            return tracer.StartSpan(operationName, parent, SpanKind.Internal, default, null as Func<IEnumerable<Link>>);
+            return tracer.StartSpan(operationName, parent, SpanKind.Internal, default, null as Func<IEnumerable<Link>>, false);
         }
 
         /// <summary>
-        /// Creates span.
+        /// Starts and activates span.
+        /// </summary>
+        /// <param name="tracer">Tracer instance.</param>
+        /// <param name="operationName">Span name.</param>
+        /// <param name="parent">Parent for new span.</param>
+        /// <returns>Span instance.</returns>
+        public static ISpan StartActiveSpan(this ITracer tracer, string operationName, ISpan parent)
+        {
+            return tracer.StartSpan(operationName, parent, SpanKind.Internal, default, null as Func<IEnumerable<Link>>, true);
+        }
+
+        /// <summary>
+        /// Starts span.
         /// </summary>
         /// <param name="tracer">Tracer instance.</param>
         /// <param name="operationName">Span name.</param>
@@ -116,11 +200,24 @@ namespace OpenTelemetry.Trace
         /// <returns>Span instance.</returns>
         public static ISpan StartSpan(this ITracer tracer, string operationName, ISpan parent, SpanKind kind)
         {
-            return tracer.StartSpan(operationName, parent, kind, default, null as Func<IEnumerable<Link>>);
+            return tracer.StartSpan(operationName, parent, kind, default, null as Func<IEnumerable<Link>>, false);
         }
 
         /// <summary>
-        /// Creates span.
+        /// Starts and activates span.
+        /// </summary>
+        /// <param name="tracer">Tracer instance.</param>
+        /// <param name="operationName">Span name.</param>
+        /// <param name="parent">Parent for new span.</param>
+        /// <param name="kind">Kind.</param>
+        /// <returns>Span instance.</returns>
+        public static ISpan StartActiveSpan(this ITracer tracer, string operationName, ISpan parent, SpanKind kind)
+        {
+            return tracer.StartSpan(operationName, parent, kind, default, null as Func<IEnumerable<Link>>, true);
+        }
+
+        /// <summary>
+        /// Starts span.
         /// </summary>
         /// <param name="tracer">Tracer instance.</param>
         /// <param name="operationName">Span name.</param>
@@ -130,11 +227,25 @@ namespace OpenTelemetry.Trace
         /// <returns>Span instance.</returns>
         public static ISpan StartSpan(this ITracer tracer, string operationName, ISpan parent, SpanKind kind, DateTimeOffset startTimestamp)
         {
-            return tracer.StartSpan(operationName, parent, kind, startTimestamp, null as Func<IEnumerable<Link>>);
+            return tracer.StartSpan(operationName, parent, kind, startTimestamp, null as Func<IEnumerable<Link>>, false);
         }
 
         /// <summary>
-        /// Creates span.
+        /// Starts and activates span.
+        /// </summary>
+        /// <param name="tracer">Tracer instance.</param>
+        /// <param name="operationName">Span name.</param>
+        /// <param name="parent">Parent for new span.</param>
+        /// <param name="kind">Kind.</param>
+        /// <param name="startTimestamp">Start timestamp.</param>
+        /// <returns>Span instance.</returns>
+        public static ISpan StartActiveSpan(this ITracer tracer, string operationName, ISpan parent, SpanKind kind, DateTimeOffset startTimestamp)
+        {
+            return tracer.StartSpan(operationName, parent, kind, startTimestamp, null as Func<IEnumerable<Link>>, true);
+        }
+
+        /// <summary>
+        /// Starts span.
         /// </summary>
         /// <param name="tracer">Tracer instance.</param>
         /// <param name="operationName">Span name.</param>
@@ -142,11 +253,23 @@ namespace OpenTelemetry.Trace
         /// <returns>Span instance.</returns>
         public static ISpan StartSpan(this ITracer tracer, string operationName, in SpanContext parent)
         {
-            return tracer.StartSpan(operationName, parent, SpanKind.Internal, default, null as Func<IEnumerable<Link>>);
+            return tracer.StartSpan(operationName, parent, SpanKind.Internal, default, null as Func<IEnumerable<Link>>, false);
         }
 
         /// <summary>
-        /// Creates span.
+        /// Starts and activates span.
+        /// </summary>
+        /// <param name="tracer">Tracer instance.</param>
+        /// <param name="operationName">Span name.</param>
+        /// <param name="parent">Parent for new span.</param>
+        /// <returns>Span instance.</returns>
+        public static ISpan StartActiveSpan(this ITracer tracer, string operationName, in SpanContext parent)
+        {
+            return tracer.StartSpan(operationName, parent, SpanKind.Internal, default, null as Func<IEnumerable<Link>>, true);
+        }
+
+        /// <summary>
+        /// Starts span.
         /// </summary>
         /// <param name="tracer">Tracer instance.</param>
         /// <param name="operationName">Span name.</param>
@@ -155,11 +278,24 @@ namespace OpenTelemetry.Trace
         /// <returns>Span instance.</returns>
         public static ISpan StartSpan(this ITracer tracer, string operationName, in SpanContext parent, SpanKind kind)
         {
-            return tracer.StartSpan(operationName, parent, kind, default, null as Func<IEnumerable<Link>>);
+            return tracer.StartSpan(operationName, parent, kind, default, null as Func<IEnumerable<Link>>, false);
         }
 
         /// <summary>
-        /// Creates span.
+        /// Starts and activates span.
+        /// </summary>
+        /// <param name="tracer">Tracer instance.</param>
+        /// <param name="operationName">Span name.</param>
+        /// <param name="parent">Parent for new span.</param>
+        /// <param name="kind">Kind.</param>
+        /// <returns>Span instance.</returns>
+        public static ISpan StartActiveSpan(this ITracer tracer, string operationName, in SpanContext parent, SpanKind kind)
+        {
+            return tracer.StartSpan(operationName, parent, kind, default, null as Func<IEnumerable<Link>>, true);
+        }
+
+        /// <summary>
+        /// Starts span.
         /// </summary>
         /// <param name="tracer">Tracer instance.</param>
         /// <param name="operationName">Span name.</param>
@@ -169,11 +305,25 @@ namespace OpenTelemetry.Trace
         /// <returns>Span instance.</returns>
         public static ISpan StartSpan(this ITracer tracer, string operationName, in SpanContext parent, SpanKind kind, DateTimeOffset startTimestamp)
         {
-            return tracer.StartSpan(operationName, parent, kind, startTimestamp, null as Func<IEnumerable<Link>>);
+            return tracer.StartSpan(operationName, parent, kind, startTimestamp, null as Func<IEnumerable<Link>>, false);
         }
 
         /// <summary>
-        /// Creates span from auto-collected System.Diagnostics.Activity.
+        /// Starts and activates span.
+        /// </summary>
+        /// <param name="tracer">Tracer instance.</param>
+        /// <param name="operationName">Span name.</param>
+        /// <param name="parent">Parent for new span.</param>
+        /// <param name="kind">Kind.</param>
+        /// <param name="startTimestamp">Start timestamp.</param>
+        /// <returns>Span instance.</returns>
+        public static ISpan StartActiveSpan(this ITracer tracer, string operationName, in SpanContext parent, SpanKind kind, DateTimeOffset startTimestamp)
+        {
+            return tracer.StartSpan(operationName, parent, kind, startTimestamp, null as Func<IEnumerable<Link>>, true);
+        }
+
+        /// <summary>
+        /// Starts and activates span from auto-collected <see cref="Activity"/>.
         /// </summary>
         /// <param name="tracer">Tracer instance.</param>
         /// <param name="operationName">Span name.</param>
@@ -185,7 +335,7 @@ namespace OpenTelemetry.Trace
         }
 
         /// <summary>
-        /// Creates span from auto-collected System.Diagnostics.Activity.
+        /// Starts and activates span from auto-collected <see cref="Activity"/>.
         /// </summary>
         /// <param name="tracer">Tracer instance.</param>
         /// <param name="operationName">Span name.</param>

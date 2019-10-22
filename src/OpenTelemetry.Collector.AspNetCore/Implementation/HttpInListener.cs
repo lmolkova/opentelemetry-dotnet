@@ -13,6 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // </copyright>
+
+using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -66,10 +68,8 @@ namespace OpenTelemetry.Collector.AspNetCore.Implementation
                     request,
                     (r, name) => r.Headers[name]);
 
-                span = this.Tracer.StartSpan(path, ctx, SpanKind.Server);
+                span = this.Tracer.StartActiveSpan(path, ctx, SpanKind.Server);
             }
-
-            this.Tracer.WithSpan(span);
 
             if (span.IsRecording)
             {
@@ -97,7 +97,7 @@ namespace OpenTelemetry.Collector.AspNetCore.Implementation
 
             if (!span.IsRecording)
             {
-                span.End();
+                this.DisposeOrEndSpan(span);
                 return;
             }
 
@@ -110,7 +110,8 @@ namespace OpenTelemetry.Collector.AspNetCore.Implementation
             var response = context.Response;
 
             span.PutHttpStatusCode(response.StatusCode, response.HttpContext.Features.Get<IHttpResponseFeature>().ReasonPhrase);
-            span.End();
+
+            this.DisposeOrEndSpan(span);
         }
 
         public override void OnCustom(string name, Activity activity, object payload)
@@ -184,6 +185,18 @@ namespace OpenTelemetry.Collector.AspNetCore.Implementation
             }
 
             return builder.ToString();
+        }
+
+        private void DisposeOrEndSpan(ISpan span)
+        {
+            if (span is IDisposable disposableSpan)
+            {
+                disposableSpan.Dispose();
+            }
+            else
+            {
+                span.End();
+            }
         }
     }
 }

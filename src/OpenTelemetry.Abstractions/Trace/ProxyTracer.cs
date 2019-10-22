@@ -47,84 +47,79 @@ namespace OpenTelemetry.Trace
             return this.realTracer != null ? this.realTracer.WithSpan(span) : NoopScope;
         }
 
-        public ISpan StartRootSpan(string operationName, SpanKind kind, DateTimeOffset startTimestamp, Func<IEnumerable<Link>> linksGetter)
+        public ISpan StartRootSpan(string operationName, SpanKind kind, DateTimeOffset startTimestamp, Func<IEnumerable<Link>> linksGetter, bool activate)
         {
             if (operationName == null)
             {
                 throw new ArgumentNullException(nameof(operationName));
             }
 
-            return this.realTracer != null ? this.realTracer.StartRootSpan(operationName, kind, startTimestamp, linksGetter) : BlankSpan.Instance;
+            return this.realTracer != null ? this.realTracer.StartRootSpan(operationName, kind, startTimestamp, linksGetter, activate) : BlankSpan.Instance;
         }
 
-        public ISpan StartRootSpan(string operationName, SpanKind kind, DateTimeOffset startTimestamp, IEnumerable<Link> links)
+        public ISpan StartRootSpan(string operationName, SpanKind kind, DateTimeOffset startTimestamp, IEnumerable<Link> links, bool activate)
         {
             if (operationName == null)
             {
                 throw new ArgumentNullException(nameof(operationName));
             }
 
-            return this.realTracer != null ? this.realTracer.StartRootSpan(operationName, kind, startTimestamp, links) : BlankSpan.Instance;
+            return this.realTracer != null ? this.realTracer.StartRootSpan(operationName, kind, startTimestamp, links, activate) : BlankSpan.Instance;
         }
 
-        public ISpan StartSpan(string operationName, SpanKind kind, DateTimeOffset startTimestamp, Func<IEnumerable<Link>> linksGetter)
+        public ISpan StartSpan(string operationName, SpanKind kind, DateTimeOffset startTimestamp, Func<IEnumerable<Link>> linksGetter, bool activate)
         {
-            if (operationName == null)
-            {
-                throw new ArgumentNullException(nameof(operationName));
-            }
-
-            return this.realTracer != null ? this.realTracer.StartSpan(operationName, kind, startTimestamp, linksGetter) : BlankSpan.Instance;
+            return this.realTracer != null ? this.realTracer.StartSpan(operationName, kind, startTimestamp, linksGetter, activate) : BlankSpan.Instance;
         }
 
-        public ISpan StartSpan(string operationName, SpanKind kind, DateTimeOffset startTimestamp, IEnumerable<Link> links)
+        public ISpan StartSpan(string operationName, SpanKind kind, DateTimeOffset startTimestamp, IEnumerable<Link> links, bool activate)
         {
             if (operationName == null)
             {
                 throw new ArgumentNullException(nameof(operationName));
             }
 
-            return this.realTracer != null ? this.realTracer.StartSpan(operationName, kind, startTimestamp, links) : BlankSpan.Instance;
+            return this.realTracer != null ? this.realTracer.StartSpan(operationName, kind, startTimestamp, links, activate) : BlankSpan.Instance;
         }
 
-        public ISpan StartSpan(string operationName, ISpan parent, SpanKind kind, DateTimeOffset startTimestamp, Func<IEnumerable<Link>> linksGetter)
+        public ISpan StartSpan(string operationName, ISpan parent, SpanKind kind, DateTimeOffset startTimestamp, Func<IEnumerable<Link>> linksGetter, bool activate)
         {
             if (operationName == null)
             {
                 throw new ArgumentNullException(nameof(operationName));
             }
 
-            return this.realTracer != null ? this.realTracer.StartSpan(operationName, parent, kind, startTimestamp, linksGetter) : BlankSpan.Instance;
+            return this.realTracer != null ? this.realTracer.StartSpan(operationName, parent, kind, startTimestamp, linksGetter, activate) : BlankSpan.Instance;
         }
 
-        public ISpan StartSpan(string operationName, ISpan parent, SpanKind kind, DateTimeOffset startTimestamp, IEnumerable<Link> links)
+        public ISpan StartSpan(string operationName, ISpan parent, SpanKind kind, DateTimeOffset startTimestamp, IEnumerable<Link> links, bool activate)
         {
             if (operationName == null)
             {
                 throw new ArgumentNullException(nameof(operationName));
             }
 
-            return this.realTracer != null ? this.realTracer.StartSpan(operationName, parent, kind, startTimestamp, links) : BlankSpan.Instance;
+            return this.realTracer != null ? this.realTracer.StartSpan(operationName, parent, kind, startTimestamp, links, activate) : BlankSpan.Instance;
         }
 
-        public ISpan StartSpan(string operationName, in SpanContext parent, SpanKind kind, DateTimeOffset startTimestamp, Func<IEnumerable<Link>> linksGetter)
+        public ISpan StartSpan(string operationName, in SpanContext parent, SpanKind kind, DateTimeOffset startTimestamp, Func<IEnumerable<Link>> linksGetter, bool activate)
         {
             if (operationName == null)
             {
                 throw new ArgumentNullException(nameof(operationName));
             }
 
-            return this.realTracer != null ? this.realTracer.StartSpan(operationName, parent, kind, startTimestamp, linksGetter) : BlankSpan.Instance;
+            return this.realTracer != null ? this.realTracer.StartSpan(operationName, parent, kind, startTimestamp, linksGetter, activate) : BlankSpan.Instance;
         }
 
-        public ISpan StartSpan(string operationName, in SpanContext parent, SpanKind kind, DateTimeOffset startTimestamp, IEnumerable<Link> links)
+        public ISpan StartSpan(string operationName, in SpanContext parent, SpanKind kind, DateTimeOffset startTimestamp, IEnumerable<Link> links, bool activate)
         {
             if (operationName == null)
             {
                 throw new ArgumentNullException(nameof(operationName));
             }
 
-            return this.realTracer != null ? this.realTracer.StartSpan(operationName, parent, kind, startTimestamp, links) : BlankSpan.Instance;
+            return this.realTracer != null ? this.realTracer.StartSpan(operationName, parent, kind, startTimestamp, links, activate) : BlankSpan.Instance;
         }
 
         public ISpan StartSpanFromActivity(string operationName, Activity activity, SpanKind kind, Func<IEnumerable<Link>> linksGetter)
