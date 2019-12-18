@@ -50,6 +50,9 @@ namespace Benchmarks
         public ISpan CreateSpan_Sampled() => SpanCreationScenarios.CreateSpan(this.alwaysSampleTracer);
 
         [Benchmark]
+        public ISpan CreateSpan_ParentContext() => SpanCreationScenarios.CreateSpan_ParentContext(this.alwaysSampleTracer);
+
+/*        [Benchmark]
         public ISpan CreateSpan_Attributes_Sampled() => SpanCreationScenarios.CreateSpan_Attributes(this.alwaysSampleTracer);
 
         [Benchmark]
@@ -71,6 +74,6 @@ namespace Benchmarks
         public ISpan CreateSpan_Attributes_Noop() => SpanCreationScenarios.CreateSpan_Attributes(this.noopTracer);
 
         [Benchmark]
-        public ISpan CreateSpan_Propagate_Noop() => SpanCreationScenarios.CreateSpan_Propagate(this.noopTracer);
+        public ISpan CreateSpan_Propagate_Noop() => SpanCreationScenarios.CreateSpan_Propagate(this.noopTracer);*/
     }
 }
