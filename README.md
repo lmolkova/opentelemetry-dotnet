@@ -25,28 +25,7 @@ Maintainers ([@open-telemetry/dotnet-maintainers](https://github.com/orgs/open-t
 
 OpenTelemetry is a toolkit for collecting application performance and behavior
 data.
-
-The library is in [Alpha](#versioning) stage. The library is expected to move
-to [GA](#versioning) stage after v1.0.0 major release.
-
-Please join [gitter][dotnet-gitter-url] for help or feedback on this project.
-
-We encourage contributions. Use tags [up-for-grabs][up-for-grabs-issues] and
-[good first issue][good-first-issues] to get started with the project. Follow
-[CONTRIBUTING](CONTRIBUTING.md) guide to report issues or submit a proposal.
-
-## Packages
-
-### Nightly builds
-
-Myget feeds:
-
-- NuGet V3 feed: https://www.myget.org/F/opentelemetry/api/v3/index.json
-- NuGet V2 feed: https://www.myget.org/F/opentelemetry/api/v2 
-
-### API and implementation
-
-| Package                    | MyGet (CI)                                                                     | NuGet (releases)                                                               |
+                          | NuGet (releases)                                                               |
 | -------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
 | OpenTelemetry              | [![MyGet Nightly][OpenTelemetry-myget-image]][OpenTelemetry-myget-url]         | [![NuGet Release][OpenTelemetry-nuget-image]][OpenTelemetry-nuget-url]         |
 | OpenTelemetry.Api | [![MyGet Nightly][OpenTelemetry-abs-myget-image]][OpenTelemetry-abs-myget-url] | [![NuGet Release][OpenTelemetry-abs-nuget-image]][OpenTelemetry-abs-nuget-url] |
