@@ -80,7 +80,7 @@ namespace Examples.AspNetCore
                 default:
                     services.AddOpenTelemetryTracing((builder) => builder
                         .AddAspNetCoreInstrumentation()
-                        .SetSampler(new ExternalPrioritySampler(0.7))
+                        .SetSampler(new ExternalScoreSampler(0.7))
                         .AddHttpClientInstrumentation()
                         .AddConsoleExporter());
                     break;
