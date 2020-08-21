@@ -16,10 +16,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using Examples.AspNetCore.Models;
 using Microsoft.AspNetCore.Mvc;
+using OpenTelemetry.Azure.Sampling;
 
 namespace Examples.AspNetCore.Controllers
 {
@@ -32,15 +34,27 @@ namespace Examples.AspNetCore.Controllers
             "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching",
         };
 
+        private static readonly ActivitySource source = new ActivitySource("test");
         private static HttpClient httpClient = new HttpClient();
 
         [HttpGet]
         public IEnumerable<WeatherForecast> Get()
         {
-            // Making an http call here to serve as an example of
-            // how dependency calls will be captured and treated
-            // automatically as child of incoming request.
             var res = httpClient.GetStringAsync("http://google.com").Result;
+
+            using (PublicCall.BeginScope())
+            {
+                var res2 = httpClient.GetStringAsync("http://microsoft.com").Result;
+            }
+
+            using (PublicCall.BeginScope())
+            {
+                using (var internalOperation = source.StartActivity("internal", ActivityKind.Internal))
+                {
+                    var res3 = httpClient.GetStringAsync("https://www.bing.com/search?q=123").Result;
+                }
+            }
+
             var rng = new Random();
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast
             {
