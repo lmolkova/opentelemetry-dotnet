@@ -24,6 +24,7 @@ namespace OpenTelemetry.Trace
     public sealed class TraceIdRatioBasedSampler
         : Sampler
     {
+        private static readonly TraceIdRatioGenerator Generator = new TraceIdRatioGenerator();
         private readonly long idUpperBound;
         private readonly double probability;
 
@@ -66,6 +67,7 @@ namespace OpenTelemetry.Trace
         /// <inheritdoc />
         public override SamplingResult ShouldSample(in SamplingParameters samplingParameters)
         {
+<<<<<<< HEAD:src/OpenTelemetry/Trace/TraceIdRatioBasedSampler.cs
             // Always sample if we are within probability range. This is true even for child activities (that
             // may have had a different sampling decision made) to allow for different sampling policies,
             // and dynamic increases to sampling probabilities for debugging purposes.
@@ -76,6 +78,10 @@ namespace OpenTelemetry.Trace
             Span<byte> traceIdBytes = stackalloc byte[16];
             samplingParameters.TraceId.CopyTo(traceIdBytes);
             return new SamplingResult(Math.Abs(GetLowerLong(traceIdBytes)) < this.idUpperBound);
+=======
+            var score = Generator.GenerateScore(in samplingParameters);
+            return new SamplingResult(decision:score < this.probability ? SamplingDecision.RecordAndSampled : SamplingDecision.NotRecord);
+>>>>>>> 00e787da... separate score generation from sampling:src/OpenTelemetry/Trace/ProbabilitySampler.cs
         }
 
         private static long GetLowerLong(ReadOnlySpan<byte> bytes)
