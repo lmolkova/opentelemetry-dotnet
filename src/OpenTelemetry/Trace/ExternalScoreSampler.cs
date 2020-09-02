@@ -20,15 +20,62 @@ using System.Linq;
 
 namespace OpenTelemetry.Trace
 {
+
+    public abstract class SamplingScoreGenerator
+    {
+        public abstract double GenerateScore(in SamplingParameters parameters);
+    }
+
+    public class TraceIdRatioGenerator : SamplingScoreGenerator
+    {
+        public override double GenerateScore(in SamplingParameters samplingParameters)
+        {
+            Span<byte> traceIdBytes = stackalloc byte[16];
+            samplingParameters.TraceId.CopyTo(traceIdBytes);
+
+            return Math.Abs(this.GetLowerLong(traceIdBytes)) / (float)long.MaxValue;
+        }
+
+        private long GetLowerLong(ReadOnlySpan<byte> bytes)
+        {
+            long result = 0;
+            for (var i = 0; i < 8; i++)
+            {
+                result <<= 8;
+#pragma warning disable CS0675 // Bitwise-or operator used on a sign-extended operand
+                result |= bytes[i] & 0xff;
+#pragma warning restore CS0675 // Bitwise-or operator used on a sign-extended operand
+            }
+
+            return result;
+        }
+    }
+
+    public class RandomGenerator : SamplingScoreGenerator
+    {
+        public override double GenerateScore(in SamplingParameters parameters)
+        {
+            return new Random().NextDouble();
+        }
+    }
+
     public class ExternalScoreSampler : Sampler
     {
         private const string ScoreFlagName = "sampling.score";
         private static readonly int ScoreFlagLength = "sampling.score".Length;
         private static readonly IEnumerable<KeyValuePair<string, object>> EmptyAttributes = Enumerable.Empty<KeyValuePair<string, object>>();
         private readonly double probability;
+        private readonly SamplingScoreGenerator scoreGenerator;
 
         public ExternalScoreSampler(double probability)
         {
+            this.probability = probability;
+            this.scoreGenerator = new RandomGenerator();
+        }
+
+        public ExternalScoreSampler(double probability, SamplingScoreGenerator scoreGenerator)
+        {
+            this.scoreGenerator = scoreGenerator;
             this.probability = probability;
         }
 
@@ -39,8 +86,8 @@ namespace OpenTelemetry.Trace
             string tracestate = samplingParameters.ParentContext.TraceState;
             if (!this.TryGetScore(tracestate, out var score))
             {
-                // if sampling.score is NOT in the tracestate, generate a random one
-                score = (float)new Random().NextDouble();
+                // if sampling.score is NOT in the tracestate, calculate a score
+                score = (float)this.scoreGenerator.GenerateScore(in samplingParameters);
 
                 // prepend it to the tracestate
                 tracestate = tracestate != null ?
@@ -48,10 +95,10 @@ namespace OpenTelemetry.Trace
                     string.Concat(ScoreFlagName, '=', score);
             }
 
-            bool result = score <= this.probability;
+            var result = score <= this.probability;
             return new SamplingResult(
                 decision: result ? SamplingDecision.RecordAndSampled : SamplingDecision.NotRecord,
-                attributes: result ? new[] { new KeyValuePair<string, object>(ScoreFlagName, score) } : EmptyAttributes,
+                attributes: result ? new[] { new KeyValuePair<string, object>(ScoreFlagName, score) } : EmptyAttributes, // TODO merge with attributes in samplingParameters
                 tracestate: tracestate);
         }
 
