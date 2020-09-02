@@ -80,7 +80,7 @@ namespace OpenTelemetry.Trace
         public override SamplingResult ShouldSample(in SamplingParameters samplingParameters)
         {
             var score = this.generator.GenerateScore(in samplingParameters);
-            return new SamplingResult(decision:score < this.probability ? SamplingDecision.RecordAndSampled : SamplingDecision.NotRecord);
+            return new SamplingResult(score < this.probability ? SamplingDecision.RecordAndSampled : SamplingDecision.NotRecord);
         }
 
         private static long GetLowerLong(ReadOnlySpan<byte> bytes)

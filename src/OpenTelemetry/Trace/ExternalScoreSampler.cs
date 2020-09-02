@@ -20,7 +20,6 @@ using System.Linq;
 
 namespace OpenTelemetry.Trace
 {
-
     public class ExternalScoreSampler : Sampler
     {
         private const string ScoreFlagName = "sampling.score";
