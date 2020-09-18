@@ -96,9 +96,11 @@ namespace Examples.AspNetCore
                             .AddHttpClientInstrumentation()
                             .AddSource("test")
                             .SetSampler(new AzureServiceSampler(
-                                new AlwaysOnSampler(),
-                                new ThirdPartyParentOnlySampler(samplingSettingsProvider.IsSampled,
-                                    resourceIdGetter.GetResourceId, PublicBoundary.Outgoing | PublicBoundary.Incoming)))
+                                new ParentBasedSampler(new TraceIdRatioBasedSampler(0.1)),
+                                new ThirdPartyParentOnlySampler(
+                                        samplingSettingsProvider.IsSampled,
+                                        resourceIdGetter.GetResourceId,
+                                        PublicBoundary.Outgoing | PublicBoundary.Incoming)))
                             .AddZipkinExporter(zipkinOptions =>
                             {
                                 zipkinOptions.ServiceName = this.Configuration.GetValue<string>("Zipkin:ServiceName");
