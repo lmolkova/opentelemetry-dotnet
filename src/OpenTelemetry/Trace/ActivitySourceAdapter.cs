@@ -161,6 +161,19 @@ namespace OpenTelemetry.Trace
 
             var samplingResult = this.sampler.ShouldSample(samplingParameters);
 
+            if (samplingResult.Attributes != null)
+            {
+                foreach (var attr in samplingResult.Attributes)
+                {
+                    activity.AddTag(attr.Key, attr.Value);
+                }
+            }
+
+            if (samplingResult.Tracestate != null)
+            {
+                activity.TraceStateString = samplingResult.Tracestate;
+            }
+
             switch (samplingResult.Decision)
             {
                 case SamplingDecision.NotRecord:

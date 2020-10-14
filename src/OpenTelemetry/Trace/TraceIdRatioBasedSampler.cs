@@ -21,20 +21,33 @@ namespace OpenTelemetry.Trace
     /// <summary>
     /// Samples traces according to the specified probability.
     /// </summary>
-    public sealed class TraceIdRatioBasedSampler
+    public sealed class ProbabilitySampler
         : Sampler
     {
+        private readonly SamplingScoreGenerator generator;
         private readonly long idUpperBound;
         private readonly double probability;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TraceIdRatioBasedSampler"/> class.
+        /// Initializes a new instance of the <see cref="ProbabilitySampler"/> class.
         /// </summary>
         /// <param name="probability">The desired probability of sampling. This must be between 0.0 and 1.0.
         /// Higher the value, higher is the probability of a given Activity to be sampled in.
         /// </param>
-        public TraceIdRatioBasedSampler(double probability)
+        public ProbabilitySampler(double probability)
+            : this(probability, new TraceIdRatioGenerator())
         {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ProbabilitySampler"/> class.
+        /// </summary>
+        /// <param name="probability">The desired probability of sampling. This must be between 0.0 and 1.0.
+        /// Higher the value, higher is the probability of a given Activity to be sampled in.
+        /// </param>
+        public ProbabilitySampler(double probability, SamplingScoreGenerator generator)
+        {
+            this.generator = generator;
             if (probability < 0.0 || probability > 1.0)
             {
                 throw new ArgumentOutOfRangeException(nameof(probability), "Probability must be in range [0.0, 1.0]");
@@ -43,7 +56,7 @@ namespace OpenTelemetry.Trace
             this.probability = probability;
 
             // The expected description is like TraceIdRatioBasedSampler{0.000100}
-            this.Description = "TraceIdRatioBasedSampler{" + this.probability.ToString("F6", CultureInfo.InvariantCulture) + "}";
+            this.Description = string.Concat("ProbabilitySampler{", this.probability.ToString("F6", CultureInfo.InvariantCulture), ',', generator.GetType().Name, "}");
 
             // Special case the limits, to avoid any possible issues with lack of precision across
             // double/long boundaries. For probability == 0.0, we use Long.MIN_VALUE as this guarantees
@@ -66,16 +79,8 @@ namespace OpenTelemetry.Trace
         /// <inheritdoc />
         public override SamplingResult ShouldSample(in SamplingParameters samplingParameters)
         {
-            // Always sample if we are within probability range. This is true even for child activities (that
-            // may have had a different sampling decision made) to allow for different sampling policies,
-            // and dynamic increases to sampling probabilities for debugging purposes.
-            // Note use of '<' for comparison. This ensures that we never sample for probability == 0.0,
-            // while allowing for a (very) small chance of *not* sampling if the id == Long.MAX_VALUE.
-            // This is considered a reasonable trade-off for the simplicity/performance requirements (this
-            // code is executed in-line for every Activity creation).
-            Span<byte> traceIdBytes = stackalloc byte[16];
-            samplingParameters.TraceId.CopyTo(traceIdBytes);
-            return new SamplingResult(Math.Abs(GetLowerLong(traceIdBytes)) < this.idUpperBound);
+            var score = this.generator.GenerateScore(in samplingParameters);
+            return new SamplingResult(score < this.probability ? SamplingDecision.RecordAndSampled : SamplingDecision.NotRecord);
         }
 
         private static long GetLowerLong(ReadOnlySpan<byte> bytes)
