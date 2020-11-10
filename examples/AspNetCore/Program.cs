@@ -14,8 +14,10 @@
 // limitations under the License.
 // </copyright>
 
+using System;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
+using OpenTelemetry.Trace;
 
 namespace Examples.AspNetCore
 {
